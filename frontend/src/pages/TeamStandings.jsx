@@ -1,0 +1,132 @@
+import React, { useState, useEffect } from 'react';
+import { Crown } from 'lucide-react';
+
+const formatTime = (seconds) => {
+  if (!seconds || seconds === 0) return '-';
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins > 0 ? mins + ':' : ''}${secs.toFixed(3)}`;
+};
+
+export default function TeamStandings() {
+  const [stages, setStages] = useState([]);
+  const [selectedStage, setSelectedStage] = useState('');
+  
+  const [standings, setStandings] = useState([]);
+  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [teamDetails, setTeamDetails] = useState([]);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/races').then(r => r.json()).then(data => {
+      if (Array.isArray(data)) {
+        setStages(data);
+        if (data.length > 0) setSelectedStage(data[data.length - 1].race_code); // default to latest
+      }
+    }).catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    if (selectedStage !== '') {
+      fetch(`http://localhost:5000/api/standings/teams?stage=${selectedStage}`)
+        .then(r => r.json())
+        .then(data => setStandings(data));
+      setSelectedTeam(null);
+    }
+  }, [selectedStage]);
+
+  const handleRowClick = (teamCode) => {
+    if (selectedTeam === teamCode) {
+      setSelectedTeam(null);
+      return;
+    }
+    setSelectedTeam(teamCode);
+    fetch(`http://localhost:5000/api/teams/${teamCode}/results`)
+      .then(r => r.json())
+      .then(data => setTeamDetails(data));
+  };
+
+  return (
+    <div className="page-container fadeIn">
+      <div className="page-header">
+        <h1 className="page-title">Team Constructors Standings</h1>
+        <p className="page-subtitle">Total performance points combining drivers of each racing team.</p>
+      </div>
+
+      <div className="glass-panel" style={{ marginBottom: '2rem' }}>
+         <div className="form-group" style={{ margin: 0, maxWidth: '400px' }}>
+          <label className="form-label">Calculate standings up to stage (inclusive)</label>
+          <select className="form-control" value={selectedStage} onChange={e => setSelectedStage(e.target.value)}>
+            <option value="">-- All season so far --</option>
+            {stages.map(s => <option key={s.race_code} value={s.race_code}>{s.name}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="glass-panel">
+        <div className="table-responsive">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th style={{ width: '80px' }}>Pos</th>
+                <th>Team Name</th>
+                <th>Owner</th>
+                <th>Total Score</th>
+                <th>Total Time (s)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {standings.map((s, index) => (
+                <React.Fragment key={s.team_code}>
+                  <tr onClick={() => handleRowClick(s.team_code)} style={{ background: selectedTeam === s.team_code ? 'rgba(255,255,255,0.05)' : '' }}>
+                    <td>
+                      <span className={`rank-badge ${index < 3 ? 'rank-' + (index + 1) : ''}`}>
+                        {index === 0 ? <Crown size={20} color="#000" fill="#000" /> : index + 1}
+                      </span>
+                    </td>
+                    <td style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--text-main)' }}>{s.team_name}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{s.owner}</td>
+                    <td><span className="score-badge" style={{ fontSize: '1.1rem' }}>{s.total_score} PTS</span></td>
+                    <td style={{ fontFamily: 'monospace', fontSize: '1.1rem' }}>{formatTime(s.total_time)}</td>
+                  </tr>
+                  
+                  {/* Team Details Expansion */}
+                  {selectedTeam === s.team_code && (
+                    <tr>
+                      <td colSpan="5" style={{ padding: 0 }}>
+                        <div className="details-panel" style={{ borderColor: 'var(--accent-color)' }}>
+                          <h4 style={{ marginBottom: '1rem', color: 'var(--text-muted)' }}>Performance by Stage</h4>
+                          <table className="data-table" style={{ background: 'transparent' }}>
+                            <thead>
+                              <tr>
+                                <th>Stage</th>
+                                <th>Total Score Earned</th>
+                                <th>Combined Time</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {teamDetails.length === 0 && <tr><td colSpan="3">No race data yet</td></tr>}
+                              {teamDetails.map((d, i) => (
+                                <tr key={i} style={{ cursor: 'default' }}>
+                                  <td style={{ fontWeight: 500 }}>{d.stage_name}</td>
+                                  <td style={{ color: 'var(--accent-color)', fontWeight: 'bold' }}>+{d.total_score}</td>
+                                  <td style={{ fontFamily: 'monospace' }}>{formatTime(d.total_time)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+              {standings.length === 0 && (
+                <tr><td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>No data found</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,1169 @@
+% ============================================================
+% F1 CHAMPIONSHIP MANAGEMENT SYSTEM — BÁO CÁO DBMS
+% Biên dịch trên Overleaf: pdfLaTeX (mặc định)
+% ============================================================
+\documentclass[13pt, a4paper]{report}
+
+% --- Encoding (pdfLaTeX) ---
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+
+% --- Vietnamese support ---
+\usepackage[vietnamese]{babel}
+
+% --- Font Times New Roman equivalent ---
+\usepackage{mathptmx}
+
+% --- Page layout ---
+\usepackage[
+  a4paper,
+  top=2.5cm,
+  bottom=2.5cm,
+  left=1.5cm,
+  right=2cm
+]{geometry}
+
+% --- Line spacing ---
+\usepackage{setspace}
+\onehalfspacing
+
+% --- Headers & Footers ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{F1 Championship Management System}}
+\fancyhead[R]{\small\textit{Báo cáo DBMS}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% --- Colors ---
+\usepackage{xcolor}
+\definecolor{codeblue}{RGB}{0,82,162}
+\definecolor{codegray}{RGB}{245,245,245}
+\definecolor{codecomment}{RGB}{90,120,90}
+\definecolor{codestring}{RGB}{163,21,21}
+\definecolor{codekw}{RGB}{0,0,200}
+\definecolor{tableheadbg}{RGB}{31,73,125}
+\definecolor{tableheadfg}{RGB}{255,255,255}
+\definecolor{rowalt}{RGB}{235,241,250}
+\definecolor{f1red}{RGB}{225,6,0}
+
+% --- Tables ---
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{colortbl}
+\usepackage{multirow}
+\usepackage{array}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+% --- Code listings ---
+\usepackage{listings}
+\lstdefinestyle{sqlstyle}{
+  language=SQL,
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codegray},
+  keywordstyle=\color{codekw}\bfseries,
+  stringstyle=\color{codestring},
+  commentstyle=\color{codecomment}\itshape,
+  morecomment=[l]{--},
+  morestring=[b]',
+  morestring=[b]",
+  breaklines=true,
+  breakatwhitespace=false,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=8pt,
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{gray!50},
+  showstringspaces=false,
+  tabsize=4,
+  captionpos=b,
+  xleftmargin=15pt,
+  morekeywords={DELIMITER, SIGNAL, SQLSTATE, MESSAGE_TEXT, RANK, OVER,
+                PARTITION, TIMESTAMPDIFF, MICROSECOND, RESIGNAL, RESIGNAL,
+                PROCEDURE, FUNCTION, BEGIN, DECLARE, INTO, HANDLER,
+                SQLEXCEPTION, AUTO_INCREMENT, TINYINT, DATETIME, ENUM,
+                DEFAULT, CONSTRAINT, CHECK, VIEW, TRIGGER, BEFORE,
+                EACH, ROW, CALL, START, TRANSACTION, ROLLBACK, COMMIT}
+}
+\lstset{style=sqlstyle}
+
+% --- Flowchart / Diagram ---
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds}
+\tikzstyle{process}=[rectangle, rounded corners=4pt, minimum width=7cm,
+  minimum height=0.9cm, text centered, draw=codeblue, fill=blue!8,
+  font=\small]
+\tikzstyle{arrow}=[-{Stealth[length=6pt]}, thick, color=codeblue]
+\tikzstyle{decision}=[diamond, aspect=3, minimum width=4cm,
+  draw=f1red, fill=red!8, font=\small\bfseries]
+
+% --- Hyperlinks ---
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=false,
+  hidelinks,
+  pdfauthor={Sinh vien CNTT},
+  pdftitle={Bao cao DBMS - F1 Championship Management System}
+}
+
+% --- Graphics ---
+\usepackage{graphicx}
+
+% --- Miscellaneous ---
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{mdframed}
+\usepackage{background}
+
+% --- Chapter / Section formatting ---
+\titleformat{\chapter}[display]
+  {\normalfont\Large\bfseries\color{black}}
+  {\chaptertitlename\ \thechapter}{16pt}{\LARGE}
+\titlespacing*{\chapter}{0pt}{*2}{*2}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{black}}
+  {\thesection}{1em}{}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{black}}
+  {\thesubsection}{1em}{}
+
+% --- Box for important notes ---
+\newmdenv[
+  backgroundcolor=gray!8,
+  linecolor=black,
+  linewidth=1pt,
+  roundcorner=4pt,
+  skipabove=8pt,
+  skipbelow=8pt
+]{notebox}
+
+\newmdenv[
+  backgroundcolor=gray!5,
+  linecolor=black,
+  linewidth=1pt,
+  roundcorner=4pt,
+  skipabove=8pt,
+  skipbelow=8pt
+]{warnbox}
+
+% ============================================================
+\begin{document}
+% ============================================================
+
+% ---- TRANG BÌA ----
+\begin{titlepage}
+    \backgroundsetup{
+        scale=1,
+        color=black,
+        opacity=0.8,
+        angle=0,
+        position=current page.center,
+        contents={%
+            \includegraphics[width=\paperwidth,height=\paperheight]{background.png}
+        }
+    }
+
+    \centering
+    \vspace{1cm}
+
+    \textbf{\Large HỌC VIỆN CÔNG NGHỆ BƯU CHÍNH VIỄN THÔNG}\\[0.3em]
+    \textbf{\Large KHOA CÔNG NGHỆ THÔNG TIN}\\[0.5cm]
+    \textbf{\Large DEPARTMENT OF DATABASES}\\
+
+    \vspace{0.5cm}
+    \includegraphics[width=8cm]{logo.png}\\
+    \vspace{1cm}
+
+    {\Large \textbf{BÁO CÁO BÀI TẬP LỚN}}\\[0.5cm]
+    {\LARGE \textbf{HỆ QUẢN TRỊ CƠ SỞ DỮ LIỆU - NHÓM 6}}\\
+
+    \vfill
+
+    \begin{tabular}{l l}
+        \textbf{\Large Giảng viên hướng dẫn:} & \Large PGS.TS. Nguyễn Trọng Khánh \\[0.2cm]
+        \textbf{\Large Nhóm sinh viên thực hiện:} & \Large Nguyễn Văn Hiếu - B23DCCE033 \\[0.2cm]
+        & \Large Phạm Nhật Minh - B23DCCE066 \\[0.2cm]
+        & \Large Lê Minh Đức - B23DCVT095\\[0.2cm]
+    \end{tabular}
+
+    \vfill
+    {\large Hà Nội, Tháng 4/2026}
+\end{titlepage}
+
+% Xoa background sau trang bia, tranh watermark DRAFT tren cac trang con lai
+\backgroundsetup{contents={}}
+
+% ---- MUC LUC ----
+\tableofcontents
+\newpage
+
+% ============================================================
+\chapter{Giới Thiệu}
+% ============================================================
+
+\section{Tổng quan về DBMS}
+
+Hệ Quản Trị Cơ Sở Dữ Liệu (\textit{Database Management System --- DBMS}) là phần mềm trung gian đứng giữa người dùng/ứng dụng và dữ liệu được lưu trữ vật lý, cung cấp các cơ chế để định nghĩa, tạo lập, duy trì và kiểm soát truy cập đến cơ sở dữ liệu. Thay vì mỗi ứng dụng tự quản lý file riêng lẻ --- dẫn đến trùng lặp dữ liệu, không nhất quán và khó bảo trì --- DBMS cung cấp một kho dữ liệu tập trung, nhất quán và có thể truy cập đồng thời bởi nhiều người dùng.
+
+Các DBMS hiện đại như MySQL, PostgreSQL, Oracle, SQL Server đều xây dựng trên nền tảng mô hình quan hệ (\textit{Relational Model}) được Edgar F.\ Codd đề xuất năm 1970. Trong mô hình này, dữ liệu được tổ chức thành các bảng (\textit{table}) gồm nhiều hàng (\textit{row}) và cột (\textit{column}), các bảng liên kết với nhau qua khóa ngoại (\textit{foreign key}), và ngôn ngữ SQL (\textit{Structured Query Language}) được dùng để thao tác dữ liệu một cách khai báo (\textit{declarative}).
+
+\section{Vai trò của DBMS trong hệ thống thông tin}
+
+Trong kiến trúc hệ thống thông tin hiện đại, DBMS đóng vai trò là lớp nền tảng không thể thiếu:
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item \textbf{Tính toàn vẹn dữ liệu (\textit{Data Integrity}):} DBMS tự động kiểm tra và đảm bảo dữ liệu luôn hợp lệ thông qua các ràng buộc (\textit{constraints}), trigger và transaction.
+  \item \textbf{Tính nhất quán (\textit{Consistency}):} Nhiều người dùng truy cập đồng thời nhưng mỗi người đều nhìn thấy trạng thái nhất quán của dữ liệu, nhờ cơ chế ACID transaction và MVCC (\textit{Multi-Version Concurrency Control}).
+  \item \textbf{Tính bảo mật (\textit{Security}):} DBMS cung cấp hệ thống phân quyền chi tiết --- mỗi user chỉ truy cập được những gì được cho phép.
+  \item \textbf{Tính hiệu năng (\textit{Performance}):} Index, query optimizer và caching giúp truy xuất dữ liệu nhanh ngay cả khi bảng có hàng triệu dòng.
+  \item \textbf{Tính bền vững (\textit{Durability}):} Dữ liệu được đảm bảo không bị mất sau khi commit, kể cả khi server gặp sự cố đột ngột.
+\end{itemize}
+
+\section{Giới thiệu bài toán --- F1 Championship Management System}
+
+Formula 1 (F1) là giải đua xe thể thức một hàng đầu thế giới, với hàng chục đội đua, hơn 20 tay đua chuyên nghiệp và lịch thi đấu kéo dài gần một năm. Mỗi mùa giải gồm nhiều chặng đua (\textit{Grand Prix}) tại các quốc gia khác nhau.
+
+\textbf{F1 Championship Management System} là hệ thống phần mềm quản lý toàn bộ vòng đời dữ liệu của một mùa giải F1:
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item Quản lý thông tin đội đua, tay đua, hợp đồng ký kết
+  \item Quản lý lịch thi đấu và các chặng đua
+  \item Cho phép đăng ký tay đua vào từng chặng đua
+  \item Ghi nhận kết quả thi đấu sau mỗi chặng
+  \item Tự động tính điểm theo hệ thống tính điểm F1 quốc tế
+  \item Cung cấp bảng xếp hạng (BXH) tay đua và đội đua theo thời gian thực
+\end{itemize}
+
+Hệ thống là ứng dụng web full-stack gồm: Frontend React.js (giao diện người dùng), Backend Node.js/Express (REST API), và MySQL/MariaDB (cơ sở dữ liệu).
+
+\section{Mục tiêu báo cáo}
+
+Báo cáo này nhằm:
+\begin{enumerate}[leftmargin=1.5cm]
+  \item Trình bày quá trình phân tích, thiết kế và triển khai cơ sở dữ liệu cho hệ thống F1 Championship Management.
+  \item Minh họa cách áp dụng các khái niệm DBMS học thuật (chuẩn hóa, ràng buộc toàn vẹn, transaction ACID, index, view, stored procedure, trigger) vào bài toán thực tế.
+  \item Phân tích chi tiết nghiệp vụ logic và cách cơ sở dữ liệu hỗ trợ các quy trình nghiệp vụ đó.
+  \item Đánh giá các quyết định thiết kế và gợi ý hướng cải thiện.
+\end{enumerate}
+
+% ============================================================
+\chapter{Cơ Sở Lý Thuyết}
+% ============================================================
+
+\section{Khái niệm DBMS}
+
+\textbf{Định nghĩa:} DBMS là tập hợp các chương trình cho phép người dùng tạo lập, duy trì và truy xuất cơ sở dữ liệu. DBMS cung cấp giao diện giữa người dùng và cơ sở dữ liệu, đồng thời quản lý tất cả truy cập vào dữ liệu.
+
+\textbf{Các thành phần ngôn ngữ chính của DBMS:}
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item \textbf{DDL (\textit{Data Definition Language}):} Ngôn ngữ định nghĩa cấu trúc --- \lstinline[basicstyle=\ttfamily]{CREATE TABLE}, \lstinline[basicstyle=\ttfamily]{ALTER TABLE}, \lstinline[basicstyle=\ttfamily]{DROP TABLE}.
+  \item \textbf{DML (\textit{Data Manipulation Language}):} Ngôn ngữ thao tác dữ liệu --- \lstinline[basicstyle=\ttfamily]{SELECT}, \lstinline[basicstyle=\ttfamily]{INSERT}, \lstinline[basicstyle=\ttfamily]{UPDATE}, \lstinline[basicstyle=\ttfamily]{DELETE}.
+  \item \textbf{DCL (\textit{Data Control Language}):} Ngôn ngữ kiểm soát truy cập --- \lstinline[basicstyle=\ttfamily]{GRANT}, \lstinline[basicstyle=\ttfamily]{REVOKE}.
+  \item \textbf{TCL (\textit{Transaction Control Language}):} Ngôn ngữ kiểm soát giao dịch --- \lstinline[basicstyle=\ttfamily]{BEGIN}, \lstinline[basicstyle=\ttfamily]{COMMIT}, \lstinline[basicstyle=\ttfamily]{ROLLBACK}.
+\end{itemize}
+
+\section{Các mô hình dữ liệu}
+
+\textbf{Mô hình quan hệ (\textit{Relational Model})} --- được sử dụng trong dự án này:
+
+Dữ liệu được tổ chức thành các quan hệ (\textit{relation}), biểu diễn dưới dạng bảng 2 chiều. Mỗi hàng (\textit{tuple}) đại diện cho một thực thể, mỗi cột (\textit{attribute}) đại diện cho một thuộc tính. Mối quan hệ giữa các bảng được thiết lập qua Khóa ngoại (\textit{Foreign Key}).
+
+\textbf{Mô hình phi quan hệ (\textit{NoSQL}):}
+
+Gồm nhiều dạng: Document Store (MongoDB), Key-Value Store (Redis), Column Family (Cassandra), Graph Database (Neo4j). Phù hợp cho dữ liệu phi cấu trúc hoặc yêu cầu mở rộng ngang cực lớn.
+
+\textbf{Lý do chọn mô hình quan hệ cho bài toán F1:}
+
+Dữ liệu F1 có cấu trúc rõ ràng, nhiều mối quan hệ phức tạp giữa các thực thể (tay đua --- đội --- hợp đồng --- chặng --- kết quả), và yêu cầu ràng buộc toàn vẹn chặt chẽ. Mô hình quan hệ với MySQL/InnoDB đáp ứng đầy đủ các yêu cầu này.
+
+\section{Kiến trúc 3 mức (Three-Level Architecture)}
+
+Kiến trúc ANSI/SPARC định nghĩa 3 mức nhìn vào cơ sở dữ liệu:
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=0pt]
+  \node[draw=codeblue, fill=blue!8, rounded corners=4pt,
+        minimum width=12cm, minimum height=1.8cm, text centered] (ext)
+    {\textbf{MỨC NGOÀI (External Level)} \\[4pt]
+     \small View của từng nhóm người dùng \\
+     \small \texttt{v\_driver\_standings}, \texttt{v\_team\_standings}};
+
+  \node[draw=codeblue, fill=blue!15, rounded corners=4pt,
+        minimum width=12cm, minimum height=1.8cm, text centered,
+        below=2pt of ext] (con)
+    {\textbf{MỨC KHÁI NIỆM (Conceptual Level)} \\[4pt]
+     \small Schema logic toàn bộ hệ thống \\
+     \small 7 bảng, FK, Constraints, Trigger, Stored Procedure};
+
+  \node[draw=codeblue, fill=blue!25, rounded corners=4pt,
+        minimum width=12cm, minimum height=1.8cm, text centered,
+        below=2pt of con] (phy)
+    {\textbf{MỨC VẬT LÝ (Physical Level)} \\[4pt]
+     \small Cách dữ liệu lưu trên đĩa \\
+     \small B-Tree index, InnoDB tablespace, Redo/Undo Log};
+\end{tikzpicture}
+\caption{Kiến trúc 3 mức ANSI/SPARC áp dụng trong hệ thống F1}
+\end{figure}
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item \textbf{Mức Ngoài:} Mỗi nhóm người dùng nhìn thấy một ``view'' khác nhau của dữ liệu. Trong dự án F1, trang BXH chỉ thấy điểm và xếp hạng qua \texttt{v\_driver\_standings}.
+  \item \textbf{Mức Khái niệm:} Toàn bộ schema --- 7 bảng với các mối quan hệ, ràng buộc, trigger, stored procedure. Đây là tầng DBA làm việc.
+  \item \textbf{Mức Vật lý:} InnoDB engine tổ chức dữ liệu thực sự trên đĩa theo B+ Tree, quản lý buffer pool, redo log, undo log.
+\end{itemize}
+
+\section{Các khái niệm cơ bản}
+
+\textbf{Khóa chính (\textit{Primary Key --- PK}):} Cột hoặc tập cột xác định duy nhất mỗi hàng trong bảng. Ví dụ: \texttt{driver\_code} trong bảng DRIVERS.
+
+\textbf{Khóa ngoại (\textit{Foreign Key --- FK}):} Cột tham chiếu đến PK của bảng khác. Ví dụ: \texttt{RESULTS.entry\_id} tham chiếu đến \texttt{RACE\_ENTRIES.entry\_id}.
+
+\textbf{Khóa dự tuyển (\textit{Candidate Key}):} Bất kỳ tập thuộc tính nào có thể xác định duy nhất một hàng. Trong RACE\_ENTRIES, cặp \texttt{(race\_code, contract\_id)} là candidate key.
+
+\textbf{Ràng buộc toàn vẹn (\textit{Integrity Constraint}):}
+\begin{itemize}[leftmargin=1.5cm]
+  \item \textbf{Domain Constraint:} Giới hạn miền giá trị (NOT NULL, CHECK, ENUM)
+  \item \textbf{Entity Integrity:} PK không được NULL
+  \item \textbf{Referential Integrity:} FK phải tham chiếu đến giá trị PK tồn tại
+  \item \textbf{Semantic Integrity:} Ràng buộc nghiệp vụ tùy chỉnh (Trigger)
+\end{itemize}
+
+% ============================================================
+\chapter{Mô Tả Bài Toán \& Phân Tích Yêu Cầu}
+% ============================================================
+
+\section{Mô tả hệ thống}
+
+Hệ thống gồm 4 module chức năng chính:
+
+\begin{table}[h]
+\centering
+\caption{Các module chức năng của hệ thống}
+\begin{tabularx}{\textwidth}{C{2cm} L{4cm} L{7cm}}
+\toprule
+\rowcolor{tableheadbg}
+\textcolor{tableheadfg}{\textbf{Module}} &
+\textcolor{tableheadfg}{\textbf{Tên}} &
+\textcolor{tableheadfg}{\textbf{Vai trò}} \\
+\midrule
+Module 1 & Register Racing     & Đăng ký tay đua tham gia chặng đua \\
+\rowcolor{rowalt}
+Module 2 & Update Results      & Nhập kết quả thi đấu sau chặng \\
+Module 3 & Driver Standings    & Xem bảng xếp hạng tay đua \\
+\rowcolor{rowalt}
+Module 4 & Team Standings      & Xem bảng xếp hạng đội đua \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Stakeholders (Người dùng hệ thống)}
+
+\textbf{Ban tổ chức / Staff nhập liệu:}
+\begin{itemize}[leftmargin=1.5cm]
+  \item Đăng ký tay đua vào từng chặng đua (Module 1)
+  \item Nhập kết quả sau khi chặng kết thúc (Module 2)
+  \item Xem bảng xếp hạng để kiểm tra và công bố kết quả (Module 3, 4)
+\end{itemize}
+
+\textbf{Quản trị viên hệ thống (DBA):}
+\begin{itemize}[leftmargin=1.5cm]
+  \item Khởi tạo và bảo trì cơ sở dữ liệu
+  \item Thêm mùa giải, chặng đua, đội đua, tay đua mới
+  \item Theo dõi hiệu năng và backup định kỳ
+\end{itemize}
+
+\textbf{Người xem / Khán giả (Read-only):} Xem bảng xếp hạng, không có quyền ghi dữ liệu.
+
+\section{Yêu cầu chức năng (Functional Requirements)}
+
+\begin{description}[leftmargin=1.5cm, style=nextline]
+  \item[FR-01] Hệ thống quản lý thông tin các mùa giải F1 (thêm, sửa, xem).
+  \item[FR-02] Hệ thống quản lý danh sách đội đua và tay đua, bao gồm thông tin cá nhân và lịch sử hợp đồng.
+  \item[FR-03] Hệ thống cho phép đăng ký tay đua vào từng chặng đua, với ràng buộc mỗi đội tối đa 2 tay đua/chặng.
+  \item[FR-04] Hệ thống cho phép nhập kết quả thi đấu (thời gian kết thúc, số vòng hoàn thành, trạng thái) cho từng tay đua.
+  \item[FR-05] Hệ thống tự động tính điểm theo hệ thống tính điểm F1 quốc tế (P1=25, P2=18, ..., P10=1) ngay sau khi kết quả được lưu.
+  \item[FR-06] Hệ thống cung cấp bảng xếp hạng tay đua và đội đua theo thời gian thực, hỗ trợ lọc theo từng chặng cụ thể.
+  \item[FR-07] Hệ thống cho phép xem lịch sử kết quả chi tiết của từng tay đua và từng đội qua các chặng.
+  \item[FR-08] Hệ thống hỗ trợ sửa lại kết quả đã nhập (điều chỉnh sau khi xem xét lại).
+\end{description}
+
+\section{Yêu cầu phi chức năng (Non-Functional Requirements)}
+
+\begin{description}[leftmargin=1.5cm, style=nextline]
+  \item[Hiệu năng] Bảng xếp hạng tải trong $<2$ giây; Module nhập kết quả phản hồi trong $<3$ giây kể cả bước tính điểm.
+  \item[Toàn vẹn dữ liệu] Dữ liệu nhất quán tại mọi thời điểm. Không thể nhập kết quả vi phạm nghiệp vụ.
+  \item[Bảo mật] Thông tin đăng nhập DB không hardcode. Mọi truy vấn dùng Prepared Statements chống SQL Injection.
+  \item[Khả dụng] Hỗ trợ nhiều người dùng đồng thời không block nhau (InnoDB MVCC).
+  \item[Phục hồi] Chiến lược backup có thể khôi phục dữ liệu đến thời điểm bất kỳ.
+\end{description}
+
+% ============================================================
+\chapter{Nghiệp Vụ Logic (Business Logic)}
+% ============================================================
+
+\section{Quy trình nghiệp vụ tổng thể}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=0.5cm]
+  \node[process] (s1) {1.\ Admin tạo chặng đua mới trong DB};
+  \node[process, below=of s1] (s2) {2.\ Staff Module 1: Đăng ký tay đua từng đội};
+  \node[process, below=of s2] (s3) {3.\ Chặng đua diễn ra trong thực tế};
+  \node[process, below=of s3] (s4) {4.\ Staff Module 2: Nhập kết quả từng tay đua};
+  \node[process, below=of s4] (s5) {5.\ Hệ thống tự động gọi \texttt{sp\_calculate\_points}};
+  \node[process, below=of s5] (s6) {6.\ Điểm được ghi vào \texttt{RESULTS.points}};
+  \node[process, below=of s6] (s7) {7.\ Module 3 \& 4: Đọc BXH từ Views};
+
+  \draw[arrow] (s1)--(s2);
+  \draw[arrow] (s2)--(s3);
+  \draw[arrow] (s3)--(s4);
+  \draw[arrow] (s4)--(s5);
+  \draw[arrow] (s5)--(s6);
+  \draw[arrow] (s6)--(s7);
+\end{tikzpicture}
+\caption{Vòng đời dữ liệu của một chặng đua trong hệ thống}
+\end{figure}
+
+\section{Business Rules (Quy tắc nghiệp vụ)}
+
+\begin{description}[leftmargin=1.5cm, style=nextline]
+  \item[BR-01 --- Giới hạn tay đua mỗi đội] Mỗi đội đua chỉ được đăng ký tối đa 2 tay đua cho mỗi chặng đua. Ràng buộc này được thực thi bằng \textbf{Trigger} tại tầng Database.
+  \item[BR-02 --- Hệ thống tính điểm F1] Điểm theo thứ hạng thời gian, chỉ tay đua hoàn thành (\texttt{status = 'Finished'}) mới được xếp hạng và tính điểm.
+  \item[BR-03 --- Tính hợp lệ thời gian] \texttt{end\_time} phải lớn hơn \texttt{start\_time} của chặng. Thực thi bằng Trigger bảo vệ cả INSERT và UPDATE.
+  \item[BR-04 --- Xếp hạng khi bằng điểm] Ưu tiên: (1) Tổng điểm giảm dần; (2) Tổng thời gian tăng dần.
+  \item[BR-05 --- Điểm đội] Bằng tổng điểm của TẤT CẢ tay đua của đội tại chặng đó (không lấy trung bình).
+  \item[BR-06 --- Lịch sử hợp đồng] Khi chuyển đội: hợp đồng cũ \texttt{is\_active = 0}, INSERT hợp đồng mới với \texttt{is\_active = 1}.
+\end{description}
+
+\textbf{Bảng điểm F1 chuẩn (BR-02):}
+
+\begin{table}[h]
+\centering
+\caption{Hệ thống tính điểm F1}
+\begin{tabular}{cccc}
+\toprule
+\rowcolor{tableheadbg}
+\textcolor{white}{\textbf{Hạng}} & \textcolor{white}{\textbf{Điểm}} &
+\textcolor{white}{\textbf{Hạng}} & \textcolor{white}{\textbf{Điểm}} \\
+\midrule
+P1  & 25 & P6  & 8 \\
+\rowcolor{rowalt}
+P2  & 18 & P7  & 6 \\
+P3  & 15 & P8  & 4 \\
+\rowcolor{rowalt}
+P4  & 12 & P9  & 2 \\
+P5  & 10 & P10 & 1 \\
+\rowcolor{rowalt}
+\multicolumn{2}{c}{P11 trở đi: 0} & \multicolumn{2}{c}{DNF/Accident: 0} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Trigger --- Ràng buộc nghiệp vụ tại tầng Database}
+
+\subsection{Trigger 1: trg\_limit\_2\_riders}
+
+\textbf{Mục đích:} Chặn đăng ký tay đua thứ 3 của cùng một đội vào cùng một chặng.
+
+\textbf{Thời điểm kích hoạt:} BEFORE INSERT trên bảng RACE\_ENTRIES.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=0.5cm]
+  \node[process] (a) {Nhận INSERT vào RACE\_ENTRIES};
+  \node[process, below=of a] (b) {Lấy \texttt{team\_code} từ CONTRACTS dựa trên \texttt{NEW.contract\_id}};
+  \node[process, below=of b] (c) {Đếm số tay đua cùng đội đã đăng ký chặng \texttt{NEW.race\_code}};
+  \node[decision, below=0.7cm of c] (d) {\texttt{count >= 2?}};
+  \node[process, below left=0.7cm and 1.5cm of d, fill=red!10, draw=f1red]
+    (e) {SIGNAL lỗi \\ Hủy INSERT};
+  \node[process, below right=0.7cm and 1.5cm of d, fill=green!8, draw=green!60!black]
+    (f) {INSERT tiếp tục \\ bình thường};
+
+  \draw[arrow] (a)--(b);
+  \draw[arrow] (b)--(c);
+  \draw[arrow] (c)--(d);
+  \draw[arrow] (d) -- node[left,font=\small]{Có} (e);
+  \draw[arrow] (d) -- node[right,font=\small]{Không} (f);
+\end{tikzpicture}
+\caption{Luồng xử lý của Trigger trg\_limit\_2\_riders}
+\end{figure}
+
+\begin{lstlisting}[caption={Trigger trg\_limit\_2\_riders --- Giới hạn 2 tay đua/đội/chặng}]
+DELIMITER //
+CREATE TRIGGER trg_limit_2_riders
+BEFORE INSERT ON RACE_ENTRIES
+FOR EACH ROW
+BEGIN
+    DECLARE v_team_id VARCHAR(10);
+    DECLARE v_count INT;
+    -- Lay team_code cua tay dua sap dang ky
+    SELECT team_code INTO v_team_id 
+    FROM CONTRACTS WHERE contract_id = NEW.contract_id;
+    -- Dem tay dua cung doi da dang ky chang nay
+    SELECT COUNT(*) INTO v_count 
+    FROM RACE_ENTRIES re 
+    JOIN CONTRACTS c ON re.contract_id = c.contract_id
+    WHERE re.race_code = NEW.race_code 
+      AND c.team_code = v_team_id;
+    -- Neu da du 2 -> tu choi
+    IF v_count >= 2 THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Loi: Moi doi chi duoc toi da 2 tay dua!';
+    END IF;
+END //
+DELIMITER ;
+\end{lstlisting}
+
+\subsection{Trigger 2 \& 3: trg\_check\_time\_insert / trg\_check\_time\_update}
+
+\textbf{Mục đích:} Đảm bảo \texttt{end\_time > start\_time} của chặng tương ứng.
+
+\textbf{Thời điểm kích hoạt:} BEFORE INSERT và BEFORE UPDATE trên bảng RESULTS.
+
+\begin{lstlisting}[caption={Trigger kiểm tra tính hợp lệ của thời gian kết thúc}]
+DELIMITER //
+CREATE TRIGGER trg_check_time_insert
+BEFORE INSERT ON RESULTS
+FOR EACH ROW
+BEGIN
+    DECLARE v_start_time DATETIME(3);
+    IF NEW.status = 'Finished' AND NEW.end_time IS NOT NULL THEN
+        SELECT r.start_time INTO v_start_time 
+        FROM RACE_ENTRIES re 
+        JOIN RACES r ON re.race_code = r.race_code 
+        WHERE re.entry_id = NEW.entry_id;
+        
+        IF NEW.end_time <= v_start_time THEN
+            SIGNAL SQLSTATE '45000' 
+            SET MESSAGE_TEXT = 
+              'Loi: Thoi gian ket thuc phai lon hon thoi gian bat dau chang!';
+        END IF;
+    END IF;
+END //
+DELIMITER ;
+\end{lstlisting}
+
+\begin{notebox}
+Trigger \texttt{trg\_check\_time\_update} có cấu trúc hoàn toàn tương tự nhưng áp dụng cho thao tác UPDATE. Cần 2 trigger riêng biệt để bao phủ cả 2 trường hợp nhập mới và chỉnh sửa lại kết quả.
+\end{notebox}
+
+\textbf{Lý do đặt ràng buộc ở tầng Database thay vì chỉ ở tầng ứng dụng:} Nếu chỉ kiểm tra ở Frontend hay Backend Node.js, người dùng có thể bypass bằng cách gọi API trực tiếp (Postman, curl) hoặc kết nối DB bằng MySQL Workbench. Trigger đảm bảo ràng buộc được áp dụng tại \textbf{MỌI ĐIỂM TRUY CẬP} vào Database.
+
+\section{Transaction --- Đảm bảo tính nguyên tử}
+
+Đây là nghiệp vụ phức tạp nhất trong hệ thống, cần Transaction để đảm bảo tính ACID:
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=0.5cm]
+  \node[process] (t1) {Staff nhấn ``Save All Results''};
+  \node[process, below=of t1] (t2) {BEGIN TRANSACTION (Node.js)};
+  \node[process, below=of t2] (t3) {Vòng lặp: \texttt{INSERT/UPDATE RESULTS} cho từng tay đua\\
+    \small (ON DUPLICATE KEY UPDATE)};
+  \node[process, below=of t3] (t4) {Gọi \texttt{sp\_calculate\_points(race\_code)}\\
+    \small (SP có EXIT HANDLER FOR SQLEXCEPTION)};
+  \node[process, below=of t4, fill=green!8, draw=green!60!black]
+    (t5) {COMMIT --- Dữ liệu ghi vĩnh viễn};
+  \node[process, right=1.5cm of t3, fill=red!8, draw=f1red, minimum width=3.5cm]
+    (err) {Lỗi bất kỳ bước nào \\ $\Rightarrow$ ROLLBACK toàn bộ};
+
+  \draw[arrow] (t1)--(t2);
+  \draw[arrow] (t2)--(t3);
+  \draw[arrow] (t3)--(t4);
+  \draw[arrow] (t4)--(t5);
+  \draw[-{Stealth}, thick, color=f1red, dashed]
+    (t3.east) -- (err.west);
+  \draw[-{Stealth}, thick, color=f1red, dashed]
+    (t4.east) -| (err.south);
+\end{tikzpicture}
+\caption{Luồng Transaction của Module 2 --- Nhập kết quả}
+\end{figure}
+
+\section{Stored Procedure --- sp\_calculate\_points}
+
+\textbf{Mục đích:} Tính điểm theo thứ hạng thời gian và lưu vật lý vào \texttt{RESULTS.points}. Được gọi tự động sau mỗi lần lưu kết quả.
+
+\begin{lstlisting}[caption={Stored Procedure sp\_calculate\_points --- Tính điểm F1 tự động}]
+DELIMITER //
+CREATE PROCEDURE sp_calculate_points(IN p_race_code VARCHAR(10))
+BEGIN
+    -- Khai bao Handler: Gap loi se tu dong ROLLBACK
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+    
+    -- Buoc 1: Reset diem chang ve 0 de tinh lai tu dau
+    UPDATE RESULTS res
+    JOIN RACE_ENTRIES re ON res.entry_id = re.entry_id
+    SET res.points = 0
+    WHERE re.race_code = p_race_code;
+    
+    -- Buoc 2 & 3: Xep hang thoi gian va cap nhat diem vat ly
+    UPDATE RESULTS target
+    JOIN (
+        SELECT res.entry_id,
+        RANK() OVER (
+            ORDER BY TIMESTAMPDIFF(MICROSECOND, r.start_time, res.end_time) ASC
+        ) AS pos
+        FROM RESULTS res
+        JOIN RACE_ENTRIES re ON res.entry_id = re.entry_id
+        JOIN RACES r ON re.race_code = r.race_code
+        WHERE re.race_code = p_race_code AND res.status = 'Finished'
+    ) rnk ON target.entry_id = rnk.entry_id
+    SET target.points = CASE 
+        WHEN rnk.pos = 1  THEN 25  WHEN rnk.pos = 2  THEN 18
+        WHEN rnk.pos = 3  THEN 15  WHEN rnk.pos = 4  THEN 12
+        WHEN rnk.pos = 5  THEN 10  WHEN rnk.pos = 6  THEN 8
+        WHEN rnk.pos = 7  THEN 6   WHEN rnk.pos = 8  THEN 4
+        WHEN rnk.pos = 9  THEN 2   WHEN rnk.pos = 10 THEN 1
+        ELSE 0 
+    END;
+        
+    COMMIT;
+END //
+DELIMITER ;
+\end{lstlisting}
+
+\begin{notebox}
+\textbf{Lưu ý kỹ thuật:} SP dùng \textbf{Subquery} (Derived Table trong FROM của UPDATE) thay vì CTE (\texttt{WITH ... AS (...)}) vì MariaDB/MySQL có hạn chế tương thích khi dùng CTE bên trong câu UPDATE. Kết quả hoàn toàn tương đương.
+\end{notebox}
+
+\section{Views --- Bảng ảo tổng hợp BXH}
+
+\begin{lstlisting}[caption={View v\_race\_performance --- Nguồn dữ liệu gốc cho BXH}]
+CREATE VIEW v_race_performance AS
+SELECT re.race_code, c.driver_code, c.team_code,
+       res.status, res.laps_completed, res.points,
+       TIMESTAMPDIFF(MICROSECOND, r.start_time, res.end_time) / 1000000 
+           AS finish_time_seconds,
+       r.start_time AS race_start_time
+FROM RESULTS res 
+JOIN RACE_ENTRIES re ON res.entry_id = re.entry_id 
+JOIN RACES r ON re.race_code = r.race_code 
+JOIN CONTRACTS c ON re.contract_id = c.contract_id;
+\end{lstlisting}
+
+\begin{lstlisting}[caption={View v\_driver\_standings --- BXH tay đua toàn mùa giải}]
+CREATE VIEW v_driver_standings AS
+SELECT d.driver_code, d.name, d.nationality, t.name AS team_name,
+       SUM(v.points) AS total_score,
+       SUM(CASE WHEN v.status = 'Finished' 
+                THEN v.finish_time_seconds ELSE 0 END) AS total_season_time
+FROM DRIVERS d
+JOIN CONTRACTS c ON d.driver_code = c.driver_code AND c.is_active = 1
+JOIN TEAMS t ON c.team_code = t.team_code
+JOIN v_race_performance v ON v.driver_code = d.driver_code 
+                          AND v.team_code  = t.team_code
+GROUP BY d.driver_code, d.name, d.nationality, t.name
+ORDER BY total_score DESC, total_season_time ASC;
+\end{lstlisting}
+
+\begin{lstlisting}[caption={View v\_team\_standings --- BXH đội đua toàn mùa giải}]
+CREATE VIEW v_team_standings AS
+SELECT t.team_code, t.name AS team_name, t.brand,
+       SUM(v.points) AS team_total_score,
+       SUM(CASE WHEN v.status = 'Finished' 
+                THEN v.finish_time_seconds ELSE 0 END) AS team_total_time
+FROM TEAMS t
+JOIN CONTRACTS c ON t.team_code = c.team_code AND c.is_active = 1
+JOIN v_race_performance v ON v.team_code   = t.team_code 
+                          AND v.driver_code = c.driver_code
+GROUP BY t.team_code, t.name, t.brand
+ORDER BY team_total_score DESC, team_total_time ASC;
+\end{lstlisting}
+
+% ============================================================
+\chapter{Thiết Kế Cơ Sở Dữ Liệu}
+% ============================================================
+
+\section{Mô hình thực thể --- liên kết (ERD)}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  entity/.style={rectangle, draw=codeblue, fill=blue!8, rounded corners=3pt,
+    minimum width=3.2cm, minimum height=0.8cm, font=\small\bfseries},
+  attr/.style={font=\scriptsize, text=gray!80},
+  rel/.style={draw=gray, thick}
+]
+  % Entities
+  \node[entity] (champ) at (0,6)    {CHAMPIONSHIPS};
+  \node[entity] (races) at (5,6)    {RACES};
+  \node[entity] (drivers) at (0,3)  {DRIVERS};
+  \node[entity] (contracts) at (5,3){CONTRACTS};
+  \node[entity] (teams) at (10,3)   {TEAMS};
+  \node[entity] (entries) at (5,0)  {RACE\_ENTRIES};
+  \node[entity] (results) at (10,0) {RESULTS};
+
+  % Relations
+  \draw[rel] (champ) -- node[above,font=\scriptsize]{1} (races)
+             node[near end, above, font=\scriptsize]{N};
+  \draw[rel] (drivers) -- node[above,font=\scriptsize]{1} (contracts)
+             node[near end, above, font=\scriptsize]{N};
+  \draw[rel] (contracts) -- node[above,font=\scriptsize]{N} (teams)
+             node[near end, above, font=\scriptsize]{1};
+  \draw[rel] (contracts) -- node[right,font=\scriptsize]{1} (entries)
+             node[near end, right, font=\scriptsize]{N};
+  \draw[rel] (races) -- node[right,font=\scriptsize]{1} (entries)
+             node[near end, right, font=\scriptsize]{N};
+  \draw[rel] (entries) -- node[above,font=\scriptsize]{1} (results)
+             node[near end, above, font=\scriptsize]{1};
+
+  % Key labels
+  \node[attr, below=2pt of champ]    {\underline{champ\_code}, name};
+  \node[attr, below=2pt of races]    {\underline{race\_code}, name, start\_time};
+  \node[attr, below=2pt of drivers]  {\underline{driver\_code}, name};
+  \node[attr, below=2pt of contracts]{\underline{contract\_id}, is\_active};
+  \node[attr, below=2pt of teams]    {\underline{team\_code}, name};
+  \node[attr, below=2pt of entries]  {\underline{entry\_id}};
+  \node[attr, below=2pt of results]  {\underline{entry\_id}, points, status};
+\end{tikzpicture}
+\caption{Sơ đồ ERD của hệ thống F1 Championship Management}
+\end{figure}
+
+\section{Mô tả chi tiết các thực thể}
+
+\begin{table}[h]
+\centering\small
+\caption{Bảng CHAMPIONSHIPS --- Mùa giải}
+\begin{tabularx}{\textwidth}{L{2.8cm} L{2.8cm} L{2.5cm} L{5cm}}
+\toprule
+\rowcolor{tableheadbg}
+\textcolor{white}{\textbf{Cột}} & \textcolor{white}{\textbf{Kiểu}} &
+\textcolor{white}{\textbf{Ràng buộc}} & \textcolor{white}{\textbf{Mô tả}} \\
+\midrule
+champ\_code & VARCHAR(10) & PK & Mã mùa giải. VD: \texttt{F1-2026} \\
+\rowcolor{rowalt}
+name & VARCHAR(255) & NOT NULL & Tên đầy đủ mùa giải \\
+description & TEXT & NULL & Mô tả ngắn \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[h]
+\centering\small
+\caption{Bảng CONTRACTS --- Hợp đồng tay đua --- đội}
+\begin{tabularx}{\textwidth}{L{2.8cm} L{2.8cm} L{3.5cm} L{4.5cm}}
+\toprule
+\rowcolor{tableheadbg}
+\textcolor{white}{\textbf{Cột}} & \textcolor{white}{\textbf{Kiểu}} &
+\textcolor{white}{\textbf{Ràng buộc}} & \textcolor{white}{\textbf{Mô tả}} \\
+\midrule
+contract\_id & INT & PK AUTO\_INCREMENT & ID hợp đồng \\
+\rowcolor{rowalt}
+driver\_code & VARCHAR(10) & FK $\to$ DRIVERS & Tay đua \\
+team\_code & VARCHAR(10) & FK $\to$ TEAMS & Đội đua \\
+\rowcolor{rowalt}
+is\_active & TINYINT & DEFAULT 1 & 1=hiệu lực, 0=hết hạn \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[h]
+\centering\small
+\caption{Bảng RESULTS --- Kết quả thi đấu}
+\begin{tabularx}{\textwidth}{L{2.8cm} L{2.8cm} L{3.5cm} L{4.5cm}}
+\toprule
+\rowcolor{tableheadbg}
+\textcolor{white}{\textbf{Cột}} & \textcolor{white}{\textbf{Kiểu}} &
+\textcolor{white}{\textbf{Ràng buộc}} & \textcolor{white}{\textbf{Mô tả}} \\
+\midrule
+entry\_id & INT & PK, FK $\to$ RACE\_ENTRIES & Tham chiếu 1-1 \\
+\rowcolor{rowalt}
+end\_time & DATETIME(3) & NULL & Thời điểm về đích \\
+laps\_completed & INT & CHECK $\geq 0$ & Số vòng hoàn thành \\
+\rowcolor{rowalt}
+status & ENUM & DEFAULT \texttt{'Finished'} & Trạng thái kết thúc \\
+points & INT & DEFAULT 0, CHECK $\geq 0$ & Điểm F1 (do SP cập nhật) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Mô hình quan hệ}
+
+\begin{notebox}
+\texttt{CHAMPIONSHIPS(\underline{champ\_code}, name, description)} \\
+\texttt{TEAMS(\underline{team\_code}, name, brand, owner, description)} \\
+\texttt{DRIVERS(\underline{driver\_code}, name, date\_of\_birth, nationality)} \\
+\texttt{CONTRACTS(\underline{contract\_id}, driver\_code*, team\_code*, is\_active)} \\
+\texttt{RACES(\underline{race\_code}, name, num\_laps, start\_time, champ\_code*)} \\
+\texttt{RACE\_ENTRIES(\underline{entry\_id}, race\_code*, contract\_id*)} \\
+\texttt{RESULTS(\underline{entry\_id*}, end\_time, laps\_completed, status, points)}
+\vspace{4pt}\\
+\small\textit{* Dấu * biểu thị khóa ngoại}
+\end{notebox}
+
+\section{Chuẩn hóa (Normalization)}
+
+\subsection{1NF --- First Normal Form}
+\textbf{Yêu cầu:} Mỗi cột chứa giá trị nguyên tử, không có nhóm lặp, có PK.
+
+\textbf{Đánh giá:} Tất cả 7 bảng đạt 1NF. Ví dụ: danh sách tay đua của một đội không được lưu trong một cột text dạng \texttt{"VER,NOR,PIA"} mà được lưu thành nhiều dòng riêng trong bảng CONTRACTS.
+
+\subsection{2NF --- Second Normal Form}
+\textbf{Yêu cầu:} Đạt 1NF + không có phụ thuộc hàm bộ phận.
+
+\textbf{Đánh giá:} Tất cả bảng đạt 2NF. RACE\_ENTRIES dùng surrogate key \texttt{entry\_id} thay vì khóa ghép \texttt{(race\_code, contract\_id)}, loại bỏ khả năng vi phạm 2NF nếu thêm thuộc tính mới.
+
+\subsection{3NF --- Third Normal Form}
+\textbf{Yêu cầu:} Đạt 2NF + không có phụ thuộc hàm bắc cầu.
+
+\textbf{Ví dụ vi phạm đã được xử lý:} Nếu để cột \texttt{team\_name} trong bảng RACE\_ENTRIES:
+\[ \text{entry\_id} \to \text{contract\_id} \to \text{team\_code} \to \text{team\_name} \]
+\texttt{team\_name} phụ thuộc bắc cầu qua \texttt{contract\_id $\to$ team\_code}. Giải pháp: loại bỏ, JOIN qua CONTRACTS $\to$ TEAMS khi cần.
+
+\subsection{BCNF --- Boyce-Codd Normal Form}
+\textbf{Yêu cầu:} Mọi phụ thuộc hàm X $\to$ Y đều có X là superkey.
+
+\textbf{Đánh giá:} Không có vi phạm. Trong CONTRACTS: $\text{contract\_id} \to (\text{driver\_code, team\_code, is\_active})$ --- contract\_id là PK (superkey). Trong RESULTS: $\text{entry\_id} \to (\text{end\_time, status, points})$ --- entry\_id là PK.
+
+\textbf{Kết luận:} Schema đạt chuẩn BCNF, cân bằng tốt giữa tính chuẩn hóa và hiệu năng thực tế.
+
+% ============================================================
+\chapter{Triển Khai}
+% ============================================================
+
+\section{Môi trường và công nghệ}
+
+\begin{table}[h]
+\centering
+\caption{Bảng công nghệ sử dụng}
+\begin{tabularx}{\textwidth}{L{3cm} L{5cm} L{4cm}}
+\toprule
+\rowcolor{tableheadbg}
+\textcolor{white}{\textbf{Thành phần}} & \textcolor{white}{\textbf{Công nghệ}} & \textcolor{white}{\textbf{Phiên bản}} \\
+\midrule
+DBMS        & MySQL / MariaDB         & 8.0 / 10.6+ \\
+\rowcolor{rowalt}
+Backend     & Node.js + Express       & 18+ \\
+DB Driver   & mysql2/promise          & 3.x \\
+\rowcolor{rowalt}
+Frontend    & React.js                & 18+ \\
+Quản trị DB & MySQL Workbench         & 8.x \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Schema --- Tạo cấu trúc bảng (DDL)}
+
+\begin{lstlisting}[caption={DDL --- Tạo toàn bộ cấu trúc bảng}]
+DROP DATABASE IF EXISTS F1_Championship_Management;
+CREATE DATABASE F1_Championship_Management;
+USE F1_Championship_Management;
+
+CREATE TABLE CHAMPIONSHIPS (
+    champ_code  VARCHAR(10)  PRIMARY KEY,
+    name        VARCHAR(255) NOT NULL,
+    description TEXT
+);
+
+CREATE TABLE TEAMS (
+    team_code   VARCHAR(10)  PRIMARY KEY,
+    name        VARCHAR(100) NOT NULL,
+    brand       VARCHAR(100),
+    owner       VARCHAR(100),
+    description TEXT
+);
+
+CREATE TABLE DRIVERS (
+    driver_code   VARCHAR(10)  PRIMARY KEY,
+    name          VARCHAR(100) NOT NULL,
+    date_of_birth DATE,
+    nationality   VARCHAR(50),
+    biography     TEXT
+);
+
+CREATE TABLE CONTRACTS (
+    contract_id INT         AUTO_INCREMENT PRIMARY KEY,
+    driver_code VARCHAR(10),
+    team_code   VARCHAR(10),
+    is_active   TINYINT     DEFAULT 1,
+    FOREIGN KEY (driver_code) REFERENCES DRIVERS(driver_code),
+    FOREIGN KEY (team_code)   REFERENCES TEAMS(team_code)
+);
+
+CREATE TABLE RACES (
+    race_code   VARCHAR(10)  PRIMARY KEY,
+    name        VARCHAR(100) NOT NULL,
+    num_laps    INT          NOT NULL,
+    location    VARCHAR(255),
+    start_time  DATETIME(3),
+    champ_code  VARCHAR(10),
+    description TEXT,
+    FOREIGN KEY (champ_code) REFERENCES CHAMPIONSHIPS(champ_code)
+);
+
+CREATE TABLE RACE_ENTRIES (
+    entry_id    INT AUTO_INCREMENT PRIMARY KEY,
+    race_code   VARCHAR(10),
+    contract_id INT,
+    FOREIGN KEY (race_code)   REFERENCES RACES(race_code),
+    FOREIGN KEY (contract_id) REFERENCES CONTRACTS(contract_id),
+    UNIQUE(race_code, contract_id)
+);
+
+CREATE TABLE RESULTS (
+    entry_id       INT PRIMARY KEY,
+    end_time       DATETIME(3),
+    laps_completed INT,
+    status         ENUM('Finished', 'DNF', 'Accident') DEFAULT 'Finished',
+    points         INT DEFAULT 0,
+    FOREIGN KEY (entry_id) REFERENCES RACE_ENTRIES(entry_id),
+    CONSTRAINT chk_laps_completed CHECK (laps_completed >= 0),
+    CONSTRAINT chk_points         CHECK (points >= 0)
+);
+\end{lstlisting}
+
+\section{Nạp dữ liệu mẫu (DML --- INSERT)}
+
+\begin{lstlisting}[caption={INSERT --- Dữ liệu mẫu mùa giải F1 2026}]
+INSERT INTO CHAMPIONSHIPS VALUES ('F1-2026', 'Formula 1 2026', 'Season');
+
+INSERT INTO TEAMS VALUES
+    ('RBR', 'Red Bull Racing',   'Red Bull',  'Christian Horner', ''),
+    ('FER', 'Scuderia Ferrari',  'Ferrari',   'Fred Vasseur',     ''),
+    ('MER', 'Mercedes-AMG',     'Mercedes',  'Toto Wolff',       ''),
+    ('MCL', 'McLaren',           'McLaren',   'Zak Brown',        '');
+
+INSERT INTO DRIVERS VALUES
+    ('VER', 'Max Verstappen',  '1997-09-30', 'Dutch',      ''),
+    ('NOR', 'Lando Norris',    '1999-11-13', 'British',    ''),
+    ('PIA', 'Oscar Piastri',   '2001-04-06', 'Australian', ''),
+    ('LEC', 'Charles Leclerc', '1997-10-16', 'Monegasque', ''),
+    ('HAM', 'Lewis Hamilton',  '1985-01-07', 'British',    '');
+
+INSERT INTO CONTRACTS (driver_code, team_code) VALUES
+    ('VER','RBR'), ('NOR','MCL'), ('PIA','MCL'),
+    ('LEC','FER'), ('HAM','MER');
+
+INSERT INTO RACES VALUES
+  ('BHR26',   'Bahrain GP',      57, 'Sakhir',
+               '2026-03-05 15:00:00.000', 'F1-2026', ''),
+  ('JED26',   'Saudi Arabian GP',50, 'Jeddah',
+               '2026-03-19 17:00:00.000', 'F1-2026', ''),
+  ('MONACO26','Monaco GP',       78, 'Monte Carlo',
+               '2026-05-24 15:00:00.000', 'F1-2026', '');
+\end{lstlisting}
+
+\section{Các câu truy vấn SQL quan trọng}
+
+\begin{lstlisting}[caption={SELECT với JOIN --- Lấy danh sách đăng ký một chặng}]
+SELECT re.entry_id, d.name AS driver_name,
+       t.name AS team_name, d.nationality
+FROM RACE_ENTRIES re
+JOIN CONTRACTS c ON re.contract_id = c.contract_id
+JOIN DRIVERS   d ON c.driver_code  = d.driver_code
+JOIN TEAMS     t ON c.team_code    = t.team_code
+WHERE re.race_code = 'MONACO26'
+ORDER BY t.name ASC, d.name ASC;
+\end{lstlisting}
+
+\begin{lstlisting}[caption={SELECT với GROUP BY + HAVING --- Đội có điểm trên 50}]
+SELECT t.team_code, t.name AS team_name,
+       SUM(vp.points) AS team_score
+FROM TEAMS t
+JOIN CONTRACTS c ON t.team_code = c.team_code AND c.is_active = 1
+JOIN v_race_performance vp ON vp.team_code = t.team_code
+GROUP BY t.team_code, t.name
+HAVING SUM(vp.points) > 50
+ORDER BY team_score DESC;
+\end{lstlisting}
+
+\begin{lstlisting}[caption={INSERT với ON DUPLICATE KEY UPDATE --- Upsert kết quả}]
+INSERT INTO RESULTS (entry_id, end_time, laps_completed, status)
+VALUES (5, '2026-05-24 17:26:15.483', 78, 'Finished')
+ON DUPLICATE KEY UPDATE
+    end_time       = VALUES(end_time),
+    laps_completed = VALUES(laps_completed),
+    status         = VALUES(status);
+-- points duoc cap nhat tu dong boi sp_calculate_points
+\end{lstlisting}
+
+\begin{lstlisting}[caption={SELECT với Subquery --- BXH đến một chặng cụ thể}]
+SELECT d.driver_code, d.name, t.name AS team_name,
+       SUM(vp.points) AS total_score,
+       SUM(CASE WHEN vp.status = 'Finished' 
+                THEN vp.finish_time_seconds ELSE 0 END) AS total_time
+FROM DRIVERS d
+JOIN CONTRACTS c ON d.driver_code = c.driver_code AND c.is_active = 1
+JOIN TEAMS t ON c.team_code = t.team_code
+JOIN v_race_performance vp ON vp.driver_code = d.driver_code
+JOIN RACES r ON vp.race_code = r.race_code
+WHERE r.start_time <= (
+    SELECT start_time FROM RACES WHERE race_code = 'JED26'
+)
+GROUP BY d.driver_code, d.name, t.name
+ORDER BY total_score DESC, total_time ASC;
+\end{lstlisting}
+
+\section{Index --- Tối ưu hóa hiệu năng}
+
+\begin{lstlisting}[caption={Tạo 4 index bổ sung tối ưu hiệu năng}]
+-- Tang toc truy van Module 2 va Views BXH
+CREATE INDEX idx_race_code ON RACE_ENTRIES(race_code);
+
+-- Covering Index cho Join theo doi
+CREATE INDEX idx_team_code_contracts ON CONTRACTS(team_code, driver_code);
+
+-- Tang toc WHERE status='Finished' + ORDER BY trong Window Function
+CREATE INDEX idx_results_status_time ON RESULTS(status, end_time);
+
+-- Tang toc loc BXH theo moc thoi gian chang
+CREATE INDEX idx_races_start_time ON RACES(start_time);
+\end{lstlisting}
+
+\begin{table}[h]
+\centering\small
+\caption{Chiến lược Index của hệ thống}
+\begin{tabularx}{\textwidth}{L{4.5cm} L{3cm} L{5.5cm}}
+\toprule
+\rowcolor{tableheadbg}
+\textcolor{white}{\textbf{Index}} & \textcolor{white}{\textbf{Bảng.Cột}} &
+\textcolor{white}{\textbf{Phục vụ truy vấn}} \\
+\midrule
+idx\_race\_code & RACE\_ENTRIES(race\_code) & WHERE race\_code = ? --- dùng nhiều nhất \\
+\rowcolor{rowalt}
+idx\_team\_code\_contracts & CONTRACTS(team\_code, driver\_code) & JOIN + Trigger đếm tay đua \\
+idx\_results\_status\_time & RESULTS(status, end\_time) & RANK() ORDER BY trong SP \\
+\rowcolor{rowalt}
+idx\_races\_start\_time & RACES(start\_time) & BXH lọc theo mốc thời gian \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ============================================================
+\chapter{Đánh Giá Và Thảo Luận}
+% ============================================================
+
+\section{Đánh giá thiết kế cơ sở dữ liệu}
+
+\subsection{Điểm mạnh}
+
+\textbf{Chuẩn hóa đạt BCNF:} Schema đạt chuẩn BCNF với thiết kế tách bạch rõ ràng. Không có dữ liệu dư thừa --- thông tin đội chỉ trong TEAMS, thông tin tay đua chỉ trong DRIVERS.
+
+\textbf{Mô hình hóa đúng thực tế nghiệp vụ:} CONTRACTS phản ánh đúng bản chất hợp đồng trong F1 (lịch sử chuyển đội, is\_active). RACE\_ENTRIES tách biệt với RESULTS phản ánh đúng hai sự kiện có thời điểm khác nhau.
+
+\textbf{Phân tầng ràng buộc rõ ràng:}
+\begin{itemize}[leftmargin=1.5cm]
+  \item Tầng DB: NOT NULL, UNIQUE, FK, CHECK, TRIGGER --- không bỏ qua được
+  \item Tầng Backend: Validation server-side, Prepared Statements
+  \item Tầng Frontend: UX gợi ý và validation trước khi submit
+\end{itemize}
+
+\textbf{Sử dụng đầy đủ các đối tượng DBMS:}
+
+\begin{table}[h]
+\centering
+\caption{Tổng hợp các đối tượng DBMS trong hệ thống}
+\begin{tabular}{lcc}
+\toprule
+\rowcolor{tableheadbg}
+\textcolor{white}{\textbf{Đối tượng}} & \textcolor{white}{\textbf{Số lượng}} & \textcolor{white}{\textbf{Mục đích}} \\
+\midrule
+Table   & 7 & Lưu trữ dữ liệu căn bản \\
+\rowcolor{rowalt}
+View    & 3 & Đóng gói truy vấn BXH \\
+Stored Procedure & 1 & Logic tính điểm F1 \\
+\rowcolor{rowalt}
+Trigger & 3 & Ràng buộc nghiệp vụ \\
+Index   & 4 & Tối ưu hiệu năng \\
+\rowcolor{rowalt}
+Transaction & Nhiều điểm & Đảm bảo tính ACID \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Hạn chế hiện tại}
+
+\begin{description}[leftmargin=1.5cm, style=nextline]
+  \item[H1 --- Không lưu ngày bắt đầu/kết thúc hợp đồng]
+    CONTRACTS chỉ có \texttt{is\_active} (0/1), không có \texttt{start\_date} và \texttt{end\_date}. Không thể biết tay đua chuyển đội vào ngày cụ thể nào.
+    \textit{Cải thiện:} \texttt{ALTER TABLE CONTRACTS ADD COLUMN start\_date DATE, ADD COLUMN end\_date DATE;}
+  
+  \item[H2 --- Race Condition tại Trigger]
+    Nếu 2 nhân viên đồng thời đăng ký tay đua thứ 2 của cùng đội, cả 2 transaction đọc count = 1 và đều pass trigger. Kết quả: đội có 3 tay đua.
+    \textit{Giải pháp:} Dùng \texttt{SELECT ... FOR UPDATE} để lock dòng trước khi kiểm tra.
+  
+  \item[H3 --- Chưa có Authentication/Authorization]
+    Hệ thống hiện không có đăng nhập và phân quyền. Mọi người đều có thể nhập kết quả.
+  
+  \item[H4 --- Chưa có Audit Log]
+    Không ghi lại lịch sử ai đã thay đổi dữ liệu. Cần thêm bảng AUDIT\_LOG + Trigger ghi lại thay đổi.
+\end{description}
+
+\section{Khả năng mở rộng}
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item \textbf{Ngắn hạn:} Thêm Authentication (JWT), giải quyết Race Condition, thêm Audit Log, thêm ngày bắt đầu/kết thúc hợp đồng.
+  \item \textbf{Dài hạn:} Hỗ trợ nhiều mùa giải với bảng \texttt{SCORING\_SYSTEMS} theo từng era F1. Export BXH PDF/Excel. Tích hợp MySQL Replication (Read Replica) để tách tải đọc và ghi.
+\end{itemize}
+
+% ============================================================
+\chapter{Kết Luận}
+% ============================================================
+
+\section{Tóm tắt kết quả}
+
+Báo cáo đã trình bày toàn diện quá trình thiết kế và triển khai hệ thống F1 Championship Management với MySQL/MariaDB. Kết quả đạt được:
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item Schema 7 bảng đạt chuẩn BCNF, phản ánh đúng thực tế nghiệp vụ F1.
+  \item 6 Foreign Key đảm bảo toàn vẹn tham chiếu hoàn chỉnh trong chuỗi dữ liệu.
+  \item 3 Trigger thực thi ràng buộc nghiệp vụ tại tầng DB (giới hạn 2 tay đua/đội, thời gian hợp lệ).
+  \item 1 Stored Procedure với Transaction ACID để tính điểm F1 tự động và nhất quán.
+  \item 3 View đóng gói logic truy vấn phức tạp, API chỉ cần 1 câu \texttt{SELECT}.
+  \item 4 Index bổ sung tối ưu hiệu năng cho các truy vấn quan trọng nhất.
+\end{itemize}
+
+\section{Bài học rút ra}
+
+\begin{enumerate}[leftmargin=1.5cm]
+  \item \textbf{Database là nguồn sự thật cuối cùng (Single Source of Truth):} Constraints và Trigger ở DB không thể bị bypass từ bất kỳ hướng nào --- đây là lớp bảo vệ quan trọng nhất.
+  \item \textbf{Thiết kế schema chuẩn hóa tốt ngay từ đầu:} Tách RESULTS khỏi RACE\_ENTRIES, dùng CONTRACTS thay vì lưu team\_code trong DRIVERS giúp tránh hàng loạt vấn đề nhất quán dữ liệu về sau.
+  \item \textbf{Transaction cho mọi nghiệp vụ đa bước:} Bất kỳ nghiệp vụ nào liên quan đến nhiều bảng đều cần Transaction.
+  \item \textbf{Window Function RANK() là công cụ mạnh:} Giải quyết bài toán xếp hạng thanh lịch và hiệu quả O($n \log n$) so với subquery đếm O($n^2$).
+  \item \textbf{Index cần chọn lọc, không thừa:} Chỉ tạo index trên các cột xuất hiện trong WHERE, JOIN, ORDER BY của truy vấn quan trọng.
+  \item \textbf{Tính toán đúng tầng:} Đặt logic tính điểm vào Stored Procedure (tầng DB) thay vì code Node.js giúp DB tự bảo vệ tính nhất quán.
+\end{enumerate}
+
+\section{Hướng phát triển}
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item Thêm JWT Authentication và role-based access control
+  \item Giải quyết Race Condition bằng \texttt{SELECT ... FOR UPDATE}
+  \item Thêm bảng lưu lịch sử thay đổi dữ liệu (Audit Log)
+  \item Hỗ trợ nhiều hệ thống tính điểm theo từng era lịch sử F1
+  \item Tích hợp Read Replica để scale khi traffic tăng cao
+\end{itemize}
+
+% ============================================================
+\chapter*{Tài Liệu Tham Khảo}
+\addcontentsline{toc}{chapter}{Tài Liệu Tham Khảo}
+% ============================================================
+
+\begin{enumerate}[leftmargin=1.5cm]
+  \item Ramakrishnan, R., \& Gehrke, J. (2003). \textit{Database Management Systems} (3rd ed.). McGraw-Hill.
+  \item Elmasri, R., \& Navathe, S.~B. (2015). \textit{Fundamentals of Database Systems} (7th ed.). Pearson.
+  \item Oracle Corporation. (2024). \textit{MySQL 8.0 Reference Manual}. \url{https://dev.mysql.com/doc/refman/8.0/en/}
+  \item MariaDB Foundation. (2024). \textit{MariaDB Server Documentation}. \url{https://mariadb.com/kb/en/documentation/}
+  \item Codd, E.~F. (1970). A relational model of data for large shared data banks. \textit{Communications of the ACM}, 13(6), 377--387.
+  \item Fédération Internationale de l'Automobile (FIA). (2024). \textit{Formula 1 Sporting Regulations}. \url{https://www.formula1.com/}
+\end{enumerate}
+
+\end{document}
