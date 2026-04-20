@@ -57,6 +57,7 @@ Người dùng (Trình duyệt)
 ### Database
 - **MySQL 8.0 / MariaDB 10.6+**
 - Gồm: 7 bảng, 3 View, 1 Stored Procedure, 3 Trigger, 4 Index
+- Hỗ trợ đa mùa giải (Multi-season), cấu trúc linh hoạt theo `champ_code`
 
 ---
 
@@ -122,11 +123,12 @@ mysql -u root -p < schema.sql
 File này sẽ tự động tạo:
 - Database `F1_Championship_Management`
 - 7 bảng dữ liệu với đầy đủ ràng buộc
-- 3 Trigger kiểm soát nghiệp vụ
+- 3 Trigger kiểm soát nghiệp vụ (chặn vượt quá 2 tay đua/đội, kiểm tra thời gian hợp lệ)
 - 1 Stored Procedure tính điểm F1
 - 3 View tổng hợp bảng xếp hạng
 - 4 Index tối ưu hiệu năng
-- Dữ liệu mẫu (4 đội, 12 tay đua, 3 chặng đua)
+- Dữ liệu hoàn chỉnh mùa **2025** (Championship, Teams, Drivers, Contracts, Races, Entries, Results)
+- Dữ liệu khởi tạo mùa **2026** (được để trống kết quả phục vụ mục đích demo trực tiếp trên lớp)
 
 ---
 
@@ -182,33 +184,37 @@ Mở trình duyệt và truy cập: **http://localhost:5173**
 
 ## 🎯 Các tính năng chính
 
+### 🌟 Tính năng Đa mùa giải (Multi-Season) — *MỚI*
+- Tích hợp thanh chọn Season (VD: 2025 / 2026) ở sidebar.
+- Chuyển đổi mùa giải sẽ tự động tải lại toàn bộ thông tin về các cuộc đua, danh sách đăng ký, và bảng xếp hạng tương ứng cho mùa giải đó.
+
 ### Module 1 — Đăng ký tay đua (`/register`)
-- Chọn chặng đua và đội đua
-- Tick chọn tay đua muốn tham gia
-- Ràng buộc: mỗi đội **tối đa 2 tay đua** mỗi chặng (kiểm tra bởi Trigger ở DB)
-- Nhấn **Sync** để đồng bộ danh sách đăng ký
+- Chọn chặng đua và đội đua thuộc mùa giải hiện tại.
+- Tick chọn tay đua muốn tham gia (DB thiết kế mỗi đội có **3 tay đua**, nhưng chỉ được chọn 2 người thi đấu chính thức).
+- Ràng buộc: mỗi đội **tối đa 2 tay đua** mỗi chặng (được kiểm tra chặt chẽ bởi Trigger ở DB).
+- Nhấn **Sync** để đồng bộ danh sách đăng ký.
 
 ### Module 2 — Nhập kết quả (`/results`)
-- Chọn chặng đua cần nhập kết quả
-- Nhập thời gian kết thúc, số vòng hoàn thành, trạng thái cho từng tay đua
-- Thanh tiến trình hiển thị bao nhiêu tay đua đã được điền đủ
-- Validation: `end_time` phải lớn hơn `start_time` của chặng
-- Nhấn **Save All** → hệ thống gọi Stored Procedure tính điểm tự động
+- Chọn chặng đua cần nhập kết quả.
+- Nhập thời gian kết thúc, số vòng hoàn thành, trạng thái cho từng tay đua.
+- Thanh tiến trình hiển thị tỷ lệ hoàn thành (số tay đua đã có kết quả).
+- Validation: `end_time` phải lớn hơn `start_time` của chặng (bắt ở tầng DB Trigger).
+- Nhấn **Save All** → hệ thống gọi Stored Procedure tính điểm hạng tự động.
 
-| Trạng thái | Ý nghĩa | Điểm |
-|-----------|---------|------|
-| Finished | Hoàn thành chặng | Theo hạng (25→1) |
-| DNF | Bỏ cuộc (lỗi kỹ thuật) | 0 |
-| Accident | Tai nạn | 0 |
+| Trạng thái | Ý nghĩa | Điểm | Rank |
+|-----------|---------|------|------|
+| Finished  | Hoàn thành chặng | Theo hạng (25→1) | 1, 2, 3... |
+| DNF       | Bỏ cuộc (lỗi kỹ thuật)| 0 | `-` (NULL) |
+| Accident  | Tai nạn | 0 | `-` (NULL) |
 
 ### Module 3 — BXH tay đua (`/driver-standings`)
-- Xem bảng xếp hạng toàn mùa giải hoặc lọc theo từng chặng
-- Top 1 được đánh dấu bằng icon vương miện vàng 👑
-- Sắp xếp: điểm cao trước, nếu bằng điểm thì thời gian ngắn hơn xếp trên
+- Xem bảng xếp hạng toàn mùa giải (nhóm theo Season).
+- Hỗ trợ lọc theo từng vòng đấu để xem biến động điểm số lịch sử.
+- **Tính năng mở rộng:** Click vào từng tay đua sẽ hiển thị Popup chi tiết (Race History) lịch sử thành tích, trạng thái của họ tại mọi chặng.
 
 ### Module 4 — BXH đội đua (`/team-standings`)
-- Tương tự Module 3 nhưng nhóm theo đội
-- Điểm đội = tổng điểm của tất cả tay đua trong đội
+- Tương tự Module 3 nhưng điểm tổng của đội = tổng điểm của mọi tay đua thuộc đội đó ở mỗi chặng thi đấu.
+- Click vào tên đội bóng để xem lịch sử tích lũy điểm qua từng vòng. 
 
 ---
 
@@ -238,14 +244,15 @@ CHAMPIONSHIPS ──── RACES ──── RACE_ENTRIES ──── RESULTS
 
 | Method | Endpoint | Mô tả |
 |--------|----------|-------|
-| `GET` | `/api/teams` | Lấy danh sách đội đua |
-| `GET` | `/api/drivers` | Lấy danh sách tay đua |
-| `GET` | `/api/races` | Lấy danh sách chặng đua |
-| `GET` | `/api/entries/:race_code` | Lấy danh sách đăng ký của một chặng |
-| `POST` | `/api/entries/sync` | Đồng bộ đăng ký tay đua |
-| `POST` | `/api/results/save` | Lưu kết quả + tính điểm tự động |
-| `GET` | `/api/standings/drivers` | Bảng xếp hạng tay đua |
-| `GET` | `/api/standings/teams` | Bảng xếp hạng đội đua |
+| `GET`  | `/api/championships`        | Lấy bảng danh sách mùa giải |
+| `GET`  | `/api/teams`                | Lấy danh sách đội đua |
+| `GET`  | `/api/teams/:team/drivers`  | Lấy danh sách tay đua của đội hiện tại |
+| `GET`  | `/api/races`                | Lấy danh sách chặng đua (có lọc theo champ_code) |
+| `GET`  | `/api/.../entries`          | Đọc/lưu đăng ký đua |
+| `POST` | `/api/races/results`        | Lưu trữ danh sách kết quả hàng loạt |
+| `GET`  | `/api/standings/drivers`    | Bảng xếp hạng tay đua (cho từng vòng / toàn bộ mùa giải) |
+| `GET`  | `/api/standings/teams`      | BXH cho đội đua |
+| `GET`  | `/api/drivers/:id/results`  | Cung cấp lịch sử chi tiết 1 tay đua (dễ dàng dùng pop-up) |
 
 ---
 
