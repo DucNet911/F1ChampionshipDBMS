@@ -64,12 +64,15 @@ router.get('/teams/:team_code/drivers', async (req, res) => {
 router.get('/races/:race_code/teams/:team_code/entries', async (req, res) => {
     try {
         const [rows] = await db.query(`
-            SELECT c.contract_id 
+            SELECT c.contract_id, (SELECT COUNT(*) FROM RESULTS WHERE entry_id = re.entry_id) as has_result
             FROM RACE_ENTRIES re
             JOIN CONTRACTS c ON re.contract_id = c.contract_id
             WHERE re.race_code = ? AND c.team_code = ?
         `, [req.params.race_code, req.params.team_code]);
-        res.json(rows.map(r => r.contract_id));
+        res.json({
+            contract_ids: rows.map(r => r.contract_id),
+            locked: rows.some(r => r.has_result > 0)
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -87,6 +90,17 @@ router.post('/races/:race_code/teams/:team_code/entries', async (req, res) => {
         const connection = await db.getConnection();
         await connection.beginTransaction();
         try {
+            const [hasResults] = await connection.query(`
+                SELECT COUNT(*) as count FROM RESULTS r
+                JOIN RACE_ENTRIES re ON r.entry_id = re.entry_id
+                JOIN CONTRACTS c ON re.contract_id = c.contract_id
+                WHERE re.race_code = ? AND c.team_code = ?
+            `, [race_code, team_code]);
+            if (hasResults[0].count > 0) {
+                connection.release();
+                return res.status(400).json({ error: 'Data is locked. Cannot alter registration after results have been entered.' });
+            }
+
             const [existing] = await connection.query(`
                 SELECT re.entry_id, re.contract_id 
                 FROM RACE_ENTRIES re JOIN CONTRACTS c ON re.contract_id = c.contract_id
@@ -125,11 +139,14 @@ router.post('/races/:race_code/teams/:team_code/entries', async (req, res) => {
 router.get('/races/:race_code/entries', async (req, res) => {
     try {
         const [rows] = await db.query(`
-            SELECT re.entry_id, d.name AS driver_name, t.name AS team_name, re.race_code 
+            SELECT re.entry_id, d.name AS driver_name, t.name AS team_name, re.race_code,
+                   rs.end_time, rs.laps_completed, rs.status,
+                   CASE WHEN rs.entry_id IS NOT NULL THEN 1 ELSE 0 END AS is_locked
             FROM RACE_ENTRIES re 
             JOIN CONTRACTS c ON re.contract_id = c.contract_id 
             JOIN DRIVERS d ON c.driver_code = d.driver_code 
             JOIN TEAMS t ON c.team_code = t.team_code
+            LEFT JOIN RESULTS rs ON re.entry_id = rs.entry_id
             WHERE re.race_code = ?
             ORDER BY t.name ASC, d.name ASC
         `, [req.params.race_code]);

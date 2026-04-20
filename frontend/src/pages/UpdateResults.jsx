@@ -34,7 +34,12 @@ export default function UpdateResults({ champCode }) {
           setEntries(data);
           const initResults = {};
           data.forEach(e => {
-            initResults[e.entry_id] = { end_time: '', laps_completed: '', status: 'Finished' };
+            initResults[e.entry_id] = { 
+                end_time: e.end_time ? new Date(new Date(e.end_time).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 19) : '', 
+                laps_completed: e.laps_completed !== null ? e.laps_completed : '', 
+                status: e.status || 'Finished',
+                is_locked: e.is_locked === 1 
+            };
           });
           setResults(initResults);
           setErrors({});
@@ -71,7 +76,7 @@ export default function UpdateResults({ champCode }) {
       const r = results[e.entry_id];
       if (!r) return;
 
-      if (!r.laps_completed || parseInt(r.laps_completed) < 0) {
+      if (r.laps_completed === '' || r.laps_completed === null || parseInt(r.laps_completed) < 0) {
         newErrors[e.entry_id] = 'Số vòng đua phải được nhập và không âm.';
         valid = false;
         return;
@@ -107,13 +112,15 @@ export default function UpdateResults({ champCode }) {
     }
 
     setLoading(true);
-    const payload = Object.keys(results).map(id => ({
-      entry_id: parseInt(id),
-      ...results[id],
-      end_time: results[id].status === 'Finished'
-        ? (results[id].end_time ? results[id].end_time.replace('T', ' ') : null)
-        : null
-    }));
+    const payload = Object.keys(results)
+      .filter(id => !results[id].is_locked)
+      .map(id => ({
+        entry_id: parseInt(id),
+        ...results[id],
+        end_time: results[id].status === 'Finished'
+          ? (results[id].end_time ? results[id].end_time.replace('T', ' ') : null)
+          : null
+      }));
 
     try {
       const res = await fetch(`http://localhost:5000/api/races/results`, {
@@ -159,8 +166,9 @@ export default function UpdateResults({ champCode }) {
   const filledCount = entries.filter(e => {
     const r = results[e.entry_id];
     if (!r) return false;
-    if (r.status !== 'Finished') return !!r.laps_completed;
-    return !!r.end_time && !!r.laps_completed;
+    const hasLaps = r.laps_completed !== '' && r.laps_completed !== null && r.laps_completed !== undefined;
+    if (r.status !== 'Finished') return hasLaps;
+    return !!r.end_time && hasLaps;
   }).length;
   const allFilled = filledCount === entries.length && entries.length > 0;
 
@@ -249,6 +257,7 @@ export default function UpdateResults({ champCode }) {
                             className="form-control" style={{ padding: '0.5rem' }}
                             value={r.status || 'Finished'}
                             onChange={ev => handleChange(e.entry_id, 'status', ev.target.value)}
+                            disabled={r.is_locked}
                           >
                             <option value="Finished">✅ Finished</option>
                             <option value="DNF">🚫 DNF</option>
@@ -265,7 +274,7 @@ export default function UpdateResults({ champCode }) {
                             }}
                             value={r.end_time || ''}
                             onChange={ev => handleChange(e.entry_id, 'end_time', ev.target.value)}
-                            disabled={r.status !== 'Finished'}
+                            disabled={r.is_locked || r.status !== 'Finished'}
                             min={stageInfo?.start_time}
                           />
                         </td>
@@ -280,9 +289,13 @@ export default function UpdateResults({ champCode }) {
                             value={r.laps_completed || ''}
                             onChange={ev => handleChange(e.entry_id, 'laps_completed', ev.target.value)}
                             placeholder="0"
+                            disabled={r.is_locked}
                           />
                         </td>
                         <td>
+                          {r.is_locked ? (
+                             <span style={{ color: 'var(--success)', fontWeight: 'bold' }}>Locked</span>
+                          ) : (
                           <button
                             className="btn"
                             style={{ padding: '0.5rem 1rem', background: 'rgba(225, 6, 0, 0.2)', color: 'var(--primary-color)', borderRadius: '20px' }}
@@ -291,6 +304,7 @@ export default function UpdateResults({ champCode }) {
                           >
                             Clear
                           </button>
+                          )}
                         </td>
                       </tr>
                       {rowError && (

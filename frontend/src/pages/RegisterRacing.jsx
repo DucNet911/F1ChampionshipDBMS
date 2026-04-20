@@ -37,13 +37,24 @@ export default function RegisterRacing({ champCode }) {
     }
   }, [selectedTeam]);
 
+  const [isLocked, setIsLocked] = useState(false);
+
   useEffect(() => {
     if (selectedStage && selectedTeam) {
       fetch(`http://localhost:5000/api/races/${selectedStage}/teams/${selectedTeam}/entries`)
         .then(r => r.json())
-        .then(data => setSelectedRacers(data));
+        .then(data => {
+            if (Array.isArray(data)) {
+                setSelectedRacers(data);
+                setIsLocked(false);
+            } else {
+                setSelectedRacers(data.contract_ids || []);
+                setIsLocked(data.locked || false);
+            }
+        });
     } else {
       setSelectedRacers([]);
+      setIsLocked(false);
     }
   }, [selectedStage, selectedTeam]);
 
@@ -121,21 +132,27 @@ export default function RegisterRacing({ champCode }) {
             <label className="form-label">Select Racers (Max 2)</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
               {racers.map(r => (
-                <label key={r.contract_id} className="checkbox-container">
+                <label key={r.contract_id} className="checkbox-container" style={isLocked ? {opacity: 0.6, cursor: 'not-allowed'} : {}}>
                   {r.name} ({r.nationality})
                   <input 
                     type="checkbox" 
                     checked={selectedRacers.includes(r.contract_id)} 
                     onChange={() => handleCheckboxChange(r.contract_id)}
-                    disabled={!selectedRacers.includes(r.contract_id) && selectedRacers.length >= 2}
+                    disabled={isLocked || (!selectedRacers.includes(r.contract_id) && selectedRacers.length >= 2)}
                   />
                   <span className="checkmark"></span>
                 </label>
               ))}
             </div>
             
+            {isLocked && (
+              <p style={{ color: 'var(--primary-color)', fontSize: '0.9rem', marginTop: '1rem', fontWeight: 600 }}>
+                ⚠️ The result for this team has already been recorded. You can no longer change racers.
+              </p>
+            )}
+
             <div style={{ marginTop: '2.5rem', textAlign: 'right' }}>
-              <button className="btn btn-primary" onClick={handleSave} disabled={loading}>
+              <button className="btn btn-primary" onClick={handleSave} disabled={loading || isLocked}>
                 <Save size={18} /> {loading ? 'Saving...' : 'Sync Registration'}
               </button>
             </div>
