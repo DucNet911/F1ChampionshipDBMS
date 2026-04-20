@@ -107,7 +107,7 @@ h1, h2, h3, h4, h5, h6, .brand-font {
   font-weight: 800;
   color: var(--text-main);
   text-decoration: none;
-  margin-bottom: 3.5rem;
+  margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -120,11 +120,77 @@ h1, h2, h3, h4, h5, h6, .brand-font {
   -webkit-text-fill-color: transparent;
 }
 
+/* Season Selector */
+.season-selector {
+  margin-bottom: 2rem;
+  padding: 1rem 1.1rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+}
+
+.season-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.season-select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.season-select {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 10px;
+  color: var(--text-main);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.55rem 2rem 0.55rem 0.85rem;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.season-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.season-select option {
+  background: #1a1a2e;
+  color: #fff;
+}
+
+.season-chevron {
+  position: absolute;
+  right: 0.6rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.season-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  line-height: 1.4;
+  font-style: italic;
+}
+
 .nav-links {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
+
 
 .nav-link {
   padding: 1rem 1.25rem;

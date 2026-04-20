@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save } from 'lucide-react';
 
-export default function RegisterRacing() {
+export default function RegisterRacing({ champCode }) {
   const [stages, setStages] = useState([]);
   const [teams, setTeams] = useState([]);
   
@@ -15,9 +15,15 @@ export default function RegisterRacing() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/races').then(r => r.json()).then(setStages);
+    const url = champCode
+      ? `http://localhost:5000/api/races?champ_code=${champCode}`
+      : 'http://localhost:5000/api/races';
+    fetch(url).then(r => r.json()).then(data => {
+      setStages(Array.isArray(data) ? data : []);
+      setSelectedStage('');
+    });
     fetch('http://localhost:5000/api/teams').then(r => r.json()).then(setTeams);
-  }, []);
+  }, [champCode]);
 
   useEffect(() => {
     if (selectedTeam) {

@@ -1,21 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { Save, AlertCircle, CheckCircle } from 'lucide-react';
 
-export default function UpdateResults() {
+export default function UpdateResults({ champCode }) {
   const [stages, setStages] = useState([]);
   const [selectedStage, setSelectedStage] = useState('');
-  const [stageInfo, setStageInfo] = useState(null); // start_time of race
+  const [stageInfo, setStageInfo] = useState(null);
 
   const [entries, setEntries] = useState([]);
   const [results, setResults] = useState({});
-  const [errors, setErrors] = useState({}); // { entry_id: 'error message' }
+  const [errors, setErrors] = useState({});
 
   const [message, setMessage] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/races').then(r => r.json()).then(setStages);
-  }, []);
+    const url = champCode
+      ? `http://localhost:5000/api/races?champ_code=${champCode}`
+      : 'http://localhost:5000/api/races';
+    fetch(url).then(r => r.json()).then(data => {
+      setStages(Array.isArray(data) ? data : []);
+      setSelectedStage('');
+    });
+  }, [champCode]);
 
   useEffect(() => {
     if (selectedStage) {

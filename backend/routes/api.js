@@ -2,10 +2,32 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-// --- 1. Master Data ---
+// ============================================================
+// 0. CHAMPIONSHIPS — Danh sách mùa giải
+// ============================================================
+router.get('/championships', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM CHAMPIONSHIPS ORDER BY champ_code DESC');
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================================
+// 1. MASTER DATA
+// ============================================================
 router.get('/races', async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM RACES ORDER BY start_time ASC');
+        const { champ_code } = req.query;
+        let query = 'SELECT * FROM RACES';
+        let params = [];
+        if (champ_code) {
+            query += ' WHERE champ_code = ?';
+            params.push(champ_code);
+        }
+        query += ' ORDER BY start_time ASC';
+        const [rows] = await db.query(query, params);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -36,7 +58,9 @@ router.get('/teams/:team_code/drivers', async (req, res) => {
     }
 });
 
-// --- 2. Module 1: Register to racing ---
+// ============================================================
+// 2. MODULE 1: Register Racing
+// ============================================================
 router.get('/races/:race_code/teams/:team_code/entries', async (req, res) => {
     try {
         const [rows] = await db.query(`
@@ -95,7 +119,9 @@ router.post('/races/:race_code/teams/:team_code/entries', async (req, res) => {
     }
 });
 
-// --- 3. Module 2: Update Results ---
+// ============================================================
+// 3. MODULE 2: Update Results
+// ============================================================
 router.get('/races/:race_code/entries', async (req, res) => {
     try {
         const [rows] = await db.query(`
@@ -134,7 +160,10 @@ router.post('/races/results', async (req, res) => {
             }
 
             if (results.length > 0) {
-                const [raceData] = await connection.query(`SELECT race_code FROM RACE_ENTRIES WHERE entry_id = ?`, [results[0].entry_id]);
+                const [raceData] = await connection.query(
+                    `SELECT race_code FROM RACE_ENTRIES WHERE entry_id = ?`,
+                    [results[0].entry_id]
+                );
                 if (raceData.length > 0) {
                     await connection.query(`CALL sp_calculate_points(?)`, [raceData[0].race_code]);
                 }
@@ -162,30 +191,54 @@ router.delete('/results/:entry_id', async (req, res) => {
     }
 });
 
-// --- 4. Module 3: Driver Standings ---
+// ============================================================
+// 4. MODULE 3: Driver Standings — Lọc theo champ_code
+// ============================================================
 router.get('/standings/drivers', async (req, res) => {
-    const { stage } = req.query;
+    const { stage, champ_code } = req.query;
     try {
         let query;
         let queryParams = [];
 
         if (stage) {
+            // BXH tính đến một chặng cụ thể (trong cùng mùa giải)
             query = `
-                SELECT d.driver_code, d.name, d.nationality, t.name as team_name,
-                SUM(vp.points) as total_score,
-                SUM(CASE WHEN vp.status = 'Finished' THEN vp.finish_time_seconds ELSE 0 END) as total_time
+                SELECT d.driver_code, d.name, d.nationality, t.name AS team_name,
+                SUM(vp.points) AS total_score,
+                SUM(CASE WHEN vp.status = 'Finished' THEN vp.finish_time_seconds ELSE 0 END) AS total_time
                 FROM DRIVERS d
-                JOIN CONTRACTS c ON d.driver_code = c.driver_code AND c.is_active = 1
+                JOIN CONTRACTS c ON d.driver_code = c.driver_code
                 JOIN TEAMS t ON c.team_code = t.team_code
                 JOIN v_race_performance vp ON vp.driver_code = d.driver_code AND vp.team_code = t.team_code
                 JOIN RACES r ON vp.race_code = r.race_code
                 WHERE r.start_time <= (SELECT start_time FROM RACES WHERE race_code = ?)
+                  AND r.champ_code = (SELECT champ_code FROM RACES WHERE race_code = ?)
+                  AND c.contract_id IN (
+                      SELECT contract_id FROM RACE_ENTRIES WHERE race_code IN (
+                          SELECT race_code FROM RACES WHERE champ_code = (SELECT champ_code FROM RACES WHERE race_code = ?)
+                      )
+                  )
                 GROUP BY d.driver_code, d.name, d.nationality, t.name
                 ORDER BY total_score DESC, total_time ASC
             `;
-            queryParams = [stage];
+            queryParams = [stage, stage, stage];
+        } else if (champ_code) {
+            // BXH toàn mùa giải theo champ_code
+            query = `
+                SELECT d.driver_code, d.name, d.nationality, t.name AS team_name,
+                SUM(vp.points) AS total_score,
+                SUM(CASE WHEN vp.status = 'Finished' THEN vp.finish_time_seconds ELSE 0 END) AS total_time
+                FROM DRIVERS d
+                JOIN CONTRACTS c ON d.driver_code = c.driver_code
+                JOIN TEAMS t ON c.team_code = t.team_code
+                JOIN v_race_performance vp ON vp.driver_code = d.driver_code AND vp.team_code = t.team_code
+                WHERE vp.champ_code = ?
+                GROUP BY d.driver_code, d.name, d.nationality, t.name
+                ORDER BY total_score DESC, total_time ASC
+            `;
+            queryParams = [champ_code];
         } else {
-            query = `SELECT driver_code, name, nationality, team_name, total_score, total_season_time as total_time FROM v_driver_standings`;
+            query = `SELECT driver_code, name, nationality, team_name, total_score, total_season_time AS total_time FROM v_driver_standings`;
         }
 
         const [rows] = await db.query(query, queryParams);
@@ -197,44 +250,75 @@ router.get('/standings/drivers', async (req, res) => {
 
 router.get('/drivers/:driver_code/results', async (req, res) => {
     try {
-        const [rows] = await db.query(`
-            SELECT r.name as stage_name, 
-                   (SELECT COUNT(*)+1 FROM v_race_performance vp2 WHERE vp2.race_code = vp.race_code AND vp2.status = 'Finished' AND vp2.finish_time_seconds < vp.finish_time_seconds) as finish_rank,
-                   vp.points as score, vp.finish_time_seconds as time_to_finish, vp.status
+        const { champ_code } = req.query;
+        let query = `
+            SELECT r.name AS stage_name, 
+                   CASE WHEN vp.status = 'Finished' THEN 
+                       (SELECT COUNT(*)+1 FROM v_race_performance vp2 
+                        WHERE vp2.race_code = vp.race_code 
+                          AND vp2.status = 'Finished' 
+                          AND vp2.finish_time_seconds < vp.finish_time_seconds)
+                   ELSE NULL END AS finish_rank,
+                   vp.points AS score, 
+                   vp.finish_time_seconds AS time_to_finish, 
+                   vp.status,
+                   r.champ_code
             FROM v_race_performance vp
             JOIN RACES r ON vp.race_code = r.race_code
             WHERE vp.driver_code = ?
-            ORDER BY r.start_time ASC
-        `, [req.params.driver_code]);
+        `;
+        let params = [req.params.driver_code];
+        if (champ_code) {
+            query += ' AND r.champ_code = ?';
+            params.push(champ_code);
+        }
+        query += ' ORDER BY r.start_time ASC';
+        const [rows] = await db.query(query, params);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// --- 5. Module 4: Team Standings ---
+// ============================================================
+// 5. MODULE 4: Team Standings — Lọc theo champ_code
+// ============================================================
 router.get('/standings/teams', async (req, res) => {
-    const { stage } = req.query;
+    const { stage, champ_code } = req.query;
     try {
         let query;
         let queryParams = [];
 
         if (stage) {
             query = `
-                SELECT t.team_code, t.name as team_name, t.brand,
-                SUM(vp.points) as total_score,
-                SUM(CASE WHEN vp.status = 'Finished' THEN vp.finish_time_seconds ELSE 0 END) as total_time
+                SELECT t.team_code, t.name AS team_name, t.brand,
+                SUM(vp.points) AS total_score,
+                SUM(CASE WHEN vp.status = 'Finished' THEN vp.finish_time_seconds ELSE 0 END) AS total_time
                 FROM TEAMS t
-                JOIN CONTRACTS c ON t.team_code = c.team_code AND c.is_active = 1
+                JOIN CONTRACTS c ON t.team_code = c.team_code
                 JOIN v_race_performance vp ON vp.team_code = t.team_code AND vp.driver_code = c.driver_code
                 JOIN RACES r ON vp.race_code = r.race_code
                 WHERE r.start_time <= (SELECT start_time FROM RACES WHERE race_code = ?)
+                  AND r.champ_code = (SELECT champ_code FROM RACES WHERE race_code = ?)
                 GROUP BY t.team_code, t.name, t.brand
                 ORDER BY total_score DESC, total_time ASC
             `;
-            queryParams = [stage];
+            queryParams = [stage, stage];
+        } else if (champ_code) {
+            query = `
+                SELECT t.team_code, t.name AS team_name, t.brand,
+                SUM(vp.points) AS total_score,
+                SUM(CASE WHEN vp.status = 'Finished' THEN vp.finish_time_seconds ELSE 0 END) AS total_time
+                FROM TEAMS t
+                JOIN CONTRACTS c ON t.team_code = c.team_code
+                JOIN v_race_performance vp ON vp.team_code = t.team_code AND vp.driver_code = c.driver_code
+                WHERE vp.champ_code = ?
+                GROUP BY t.team_code, t.name, t.brand
+                ORDER BY total_score DESC, total_time ASC
+            `;
+            queryParams = [champ_code];
         } else {
-            query = `SELECT team_code, team_name, brand, team_total_score as total_score, team_total_time as total_time FROM v_team_standings`;
+            query = `SELECT team_code, team_name, brand, team_total_score AS total_score, team_total_time AS total_time FROM v_team_standings`;
         }
 
         const [rows] = await db.query(query, queryParams);
@@ -246,16 +330,22 @@ router.get('/standings/teams', async (req, res) => {
 
 router.get('/teams/:team_code/results', async (req, res) => {
     try {
-        const [rows] = await db.query(`
-            SELECT r.name as stage_name, 
-            SUM(vp.points) as total_score, 
-            SUM(CASE WHEN vp.status = 'Finished' THEN vp.finish_time_seconds ELSE 0 END) as total_time
+        const { champ_code } = req.query;
+        let query = `
+            SELECT r.name AS stage_name, 
+            SUM(vp.points) AS total_score,
+            SUM(CASE WHEN vp.status = 'Finished' THEN vp.finish_time_seconds ELSE 0 END) AS total_time
             FROM v_race_performance vp
             JOIN RACES r ON vp.race_code = r.race_code
             WHERE vp.team_code = ?
-            GROUP BY r.race_code, r.name, r.start_time
-            ORDER BY r.start_time ASC
-        `, [req.params.team_code]);
+        `;
+        let params = [req.params.team_code];
+        if (champ_code) {
+            query += ' AND r.champ_code = ?';
+            params.push(champ_code);
+        }
+        query += ' GROUP BY r.race_code, r.name, r.start_time ORDER BY r.start_time ASC';
+        const [rows] = await db.query(query, params);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });

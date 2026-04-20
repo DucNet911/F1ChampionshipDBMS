@@ -8,7 +8,7 @@ const formatTime = (seconds) => {
   return `${mins > 0 ? mins + ':' : ''}${secs.toFixed(3)}`;
 };
 
-export default function TeamStandings() {
+export default function TeamStandings({ champCode }) {
   const [stages, setStages] = useState([]);
   const [selectedStage, setSelectedStage] = useState('');
   
@@ -16,23 +16,42 @@ export default function TeamStandings() {
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [teamDetails, setTeamDetails] = useState([]);
 
+  // Load stages khi đổi mùa giải
   useEffect(() => {
-    fetch('http://localhost:5000/api/races').then(r => r.json()).then(data => {
+    const url = champCode
+      ? `http://localhost:5000/api/races?champ_code=${champCode}`
+      : 'http://localhost:5000/api/races';
+
+    fetch(url).then(r => r.json()).then(data => {
       if (Array.isArray(data)) {
         setStages(data);
-        if (data.length > 0) setSelectedStage(data[data.length - 1].race_code); // default to latest
+        if (data.length > 0) setSelectedStage(data[data.length - 1].race_code);
+        else setSelectedStage('');
       }
     }).catch(console.error);
-  }, []);
 
+    setSelectedTeam(null);
+    setStandings([]);
+  }, [champCode]);
+
+  // Load standings khi đổi chặng hoặc mùa
   useEffect(() => {
-    if (selectedStage !== '') {
-      fetch(`http://localhost:5000/api/standings/teams?stage=${selectedStage}`)
-        .then(r => r.json())
-        .then(data => setStandings(data));
-      setSelectedTeam(null);
+    if (!champCode) return;
+
+    let url;
+    if (selectedStage) {
+      url = `http://localhost:5000/api/standings/teams?stage=${selectedStage}`;
+    } else {
+      url = `http://localhost:5000/api/standings/teams?champ_code=${champCode}`;
     }
-  }, [selectedStage]);
+
+    fetch(url)
+      .then(r => r.json())
+      .then(data => setStandings(Array.isArray(data) ? data : []))
+      .catch(console.error);
+
+    setSelectedTeam(null);
+  }, [selectedStage, champCode]);
 
   const handleRowClick = (teamCode) => {
     if (selectedTeam === teamCode) {
@@ -40,9 +59,10 @@ export default function TeamStandings() {
       return;
     }
     setSelectedTeam(teamCode);
-    fetch(`http://localhost:5000/api/teams/${teamCode}/results`)
-      .then(r => r.json())
-      .then(data => setTeamDetails(data));
+    const url = champCode
+      ? `http://localhost:5000/api/teams/${teamCode}/results?champ_code=${champCode}`
+      : `http://localhost:5000/api/teams/${teamCode}/results`;
+    fetch(url).then(r => r.json()).then(data => setTeamDetails(data));
   };
 
   return (
@@ -69,7 +89,7 @@ export default function TeamStandings() {
               <tr>
                 <th style={{ width: '80px' }}>Pos</th>
                 <th>Team Name</th>
-                <th>Owner</th>
+                <th>Brand</th>
                 <th>Total Score</th>
                 <th>Total Time (s)</th>
               </tr>
@@ -84,12 +104,11 @@ export default function TeamStandings() {
                       </span>
                     </td>
                     <td style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--text-main)' }}>{s.team_name}</td>
-                    <td style={{ color: 'var(--text-muted)' }}>{s.owner}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{s.brand}</td>
                     <td><span className="score-badge" style={{ fontSize: '1.1rem' }}>{s.total_score} PTS</span></td>
                     <td style={{ fontFamily: 'monospace', fontSize: '1.1rem' }}>{formatTime(s.total_time)}</td>
                   </tr>
                   
-                  {/* Team Details Expansion */}
                   {selectedTeam === s.team_code && (
                     <tr>
                       <td colSpan="5" style={{ padding: 0 }}>

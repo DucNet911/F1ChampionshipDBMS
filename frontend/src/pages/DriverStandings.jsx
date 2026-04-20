@@ -8,7 +8,7 @@ const formatTime = (seconds) => {
   return `${mins > 0 ? mins + ':' : ''}${secs.toFixed(3)}`;
 };
 
-export default function DriverStandings() {
+export default function DriverStandings({ champCode }) {
   const [stages, setStages] = useState([]);
   const [selectedStage, setSelectedStage] = useState('');
   
@@ -16,23 +16,43 @@ export default function DriverStandings() {
   const [selectedDriver, setSelectedDriver] = useState(null);
   const [driverDetails, setDriverDetails] = useState([]);
 
+  // Load stages khi đổi mùa giải
   useEffect(() => {
-    fetch('http://localhost:5000/api/races').then(r => r.json()).then(data => {
+    const url = champCode
+      ? `http://localhost:5000/api/races?champ_code=${champCode}`
+      : 'http://localhost:5000/api/races';
+
+    fetch(url).then(r => r.json()).then(data => {
       if (Array.isArray(data)) {
         setStages(data);
-        if (data.length > 0) setSelectedStage(data[data.length - 1].race_code); // default to latest
+        // Mặc định chọn chặng mới nhất đã qua
+        if (data.length > 0) setSelectedStage(data[data.length - 1].race_code);
+        else setSelectedStage('');
       }
     }).catch(console.error);
-  }, []);
 
+    setSelectedDriver(null);
+    setStandings([]);
+  }, [champCode]);
+
+  // Load standings khi đổi chặng hoặc đổi mùa
   useEffect(() => {
-    if (selectedStage !== '') {
-      fetch(`http://localhost:5000/api/standings/drivers?stage=${selectedStage}`)
-        .then(r => r.json())
-        .then(data => setStandings(data));
-      setSelectedDriver(null);
+    if (!champCode) return;
+
+    let url;
+    if (selectedStage) {
+      url = `http://localhost:5000/api/standings/drivers?stage=${selectedStage}`;
+    } else {
+      url = `http://localhost:5000/api/standings/drivers?champ_code=${champCode}`;
     }
-  }, [selectedStage]);
+
+    fetch(url)
+      .then(r => r.json())
+      .then(data => setStandings(Array.isArray(data) ? data : []))
+      .catch(console.error);
+
+    setSelectedDriver(null);
+  }, [selectedStage, champCode]);
 
   const handleRowClick = (driverCode) => {
     if (selectedDriver === driverCode) {
@@ -40,9 +60,10 @@ export default function DriverStandings() {
       return;
     }
     setSelectedDriver(driverCode);
-    fetch(`http://localhost:5000/api/drivers/${driverCode}/results`)
-      .then(r => r.json())
-      .then(data => setDriverDetails(data));
+    const url = champCode
+      ? `http://localhost:5000/api/drivers/${driverCode}/results?champ_code=${champCode}`
+      : `http://localhost:5000/api/drivers/${driverCode}/results`;
+    fetch(url).then(r => r.json()).then(data => setDriverDetails(data));
   };
 
   return (
@@ -91,7 +112,6 @@ export default function DriverStandings() {
                     <td style={{ fontFamily: 'monospace', fontSize: '1.1rem' }}>{formatTime(s.total_time)}</td>
                   </tr>
                   
-                  {/* Driver Details Expansion */}
                   {selectedDriver === s.driver_code && (
                     <tr>
                       <td colSpan="6" style={{ padding: 0 }}>
